@@ -11,28 +11,28 @@ typedef list_t queue_t;
 bool queueIsEmpty(queue_t*);
 
 
-queue_t* queueNew();
+queue_t* queueNew(size_t elemSize, freer_t freer);
 
 
 void queueDelete(queue_t*);
 
 
-holdType queuePeek(queue_t*);
+void* queuePeek(queue_t*);
 
 
-holdType queuePeekLast(queue_t*);
+void* queuePeekLast(queue_t*);
 
 
-void queuePush(queue_t*, holdType value);
+void queuePush(queue_t*, void* value);
 
 
-void queuePushBeg(queue_t *queue, holdType value);
+void queuePushBeg(queue_t *queue, void* value);
 
 
-holdType queuePop(queue_t*);
+void* queuePop(queue_t*);
 
 
-holdType queuePopLast(list_t*);
+void* queuePopLast(list_t*);
 
 
 #endif //GAMMA_QUEUE_H

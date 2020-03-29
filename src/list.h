@@ -3,23 +3,29 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
 
-#define holdType char
 
+
+typedef void (*freer_t)(void*);
 
 typedef struct listElem listElem;
 
 typedef listElem* sublist;
 
 struct listElem {
-    holdType value;
+    void *value;
     sublist left;
     sublist right;
     };
 
 
 typedef struct {
-    uint32_t size;
+    uint32_t logicalSize;
+    size_t elemSize;
+    freer_t freer;
     sublist leftGuard;
     sublist rightGuard;
 } list_t;
@@ -28,28 +34,28 @@ typedef struct {
 bool listIsEmpty(list_t*);
 
 
-list_t* listNew();
+list_t* listNew(size_t elemSize, freer_t freer);
 
 
 void listDelete(list_t*);
 
 
-holdType listFirst(list_t*);
+void* listFirst(list_t*);
 
 
-holdType listLast(list_t*);
+void* listLast(list_t*);
 
 
-holdType listNth(list_t*, uint32_t index);
+void* listNth(list_t*, uint32_t index);
 
 
-void listAppend(list_t*, holdType value);
+void listAppend(list_t*, void *value);
 
 
-void listPrepend(list_t*, holdType value);
+void listPrepend(list_t*, void *value);
 
 
-void listInsert(list_t*, uint32_t index, holdType value);
+void listInsert(list_t*, uint32_t index, void *value);
 
 
 void listRemoveLast(list_t*);
@@ -61,10 +67,10 @@ void listRemoveFirst(list_t*);
 void listRemoveNth(list_t*, uint32_t index);
 
 
-void listIterLeft(void (*)(holdType), list_t*);
+void listIterLeft(void (*)(void*), list_t*);
 
 
-void listIterRight(void (*)(holdType), list_t*);
+void listIterRight(void (*)(void*), list_t*);
 
 
 

@@ -6,8 +6,8 @@ bool queueIsEmpty(queue_t *queue) {
 }
 
 
-queue_t* queueNew() {
-    return listNew();
+queue_t* queueNew(size_t elemSize, freer_t freer) {
+    return listNew(elemSize, freer);
 }
 
 
@@ -16,35 +16,35 @@ void queueDelete(queue_t *queue) {
 }
 
 
-holdType queuePeek(queue_t *queue) {
+void* queuePeek(queue_t *queue) {
     return listFirst(queue);
 }
 
 
-holdType queuePeekLast(queue_t *queue) {
+void* queuePeekLast(queue_t *queue) {
     return listLast(queue);
 }
 
 
-void queuePush(queue_t *queue, holdType value) {
+void queuePush(queue_t *queue, void* value) {
     listAppend(queue, value);
 }
 
 
-void queuePushBeg(queue_t *queue, holdType value) {
+void queuePushBeg(queue_t *queue, void* value) {
     listPrepend(queue, value);
 }
 
 
-holdType queuePop(queue_t *queue) {
-    holdType popped = queuePeek(queue);
+void* queuePop(queue_t *queue) {
+    void* popped = queuePeek(queue);
     listRemoveFirst(queue);
     return popped;
 }
 
 
-holdType queuePopLast(queue_t *queue) {
-    holdType popped = queuePeekLast(queue);
+void* queuePopLast(queue_t *queue) {
+    void* popped = queuePeekLast(queue);
     listRemoveLast(queue);
     return popped;
 }

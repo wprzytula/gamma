@@ -1,28 +1,35 @@
-#include <stdlib.h>
 #include "list.h"
-#include <assert.h>
-
 
 bool listIsEmpty(list_t *list) {
     return list->leftGuard->right == list->rightGuard;
 }
 
 
-static listElem* listCreateElem(holdType value) {
+static listElem* listCreateElem(size_t elemSize, void *value) {
     listElem *newElem = malloc(sizeof(listElem));
+    newElem->value = malloc(elemSize);
     ///TODO: error handling
-    newElem->value = value;
+    if (value)
+        memcpy(newElem->value, value, elemSize);
+    else
+        newElem->value = NULL;
     return newElem;
 }
 
 
-list_t* listNew() {
-    sublist leftGuard = listCreateElem('\v');
-    sublist rightGuard = listCreateElem('\v');
-    *leftGuard = (listElem){.left = leftGuard, .right = rightGuard};
-    *rightGuard = (listElem){.left = leftGuard, .right = rightGuard};
+list_t* listNew(size_t elemSize, freer_t freer) {
+    sublist leftGuard = listCreateElem(elemSize, NULL);
+    sublist rightGuard = listCreateElem(elemSize, NULL);
+
+    leftGuard->left = leftGuard;
+    leftGuard->right = rightGuard;
+    rightGuard->left = leftGuard;
+    rightGuard->right = rightGuard;
+
     list_t *newList = malloc(sizeof(list_t));
-    *newList = (list_t){.leftGuard = leftGuard, .rightGuard = rightGuard};
+    *newList = (list_t){.leftGuard = leftGuard, .rightGuard = rightGuard,
+                        .freer = freer, .logicalSize = 0, .elemSize = elemSize};
+
     return newList;
 }
 
@@ -33,6 +40,8 @@ void listDelete(list_t *list) {
     do {
         sentencedElem = currentElem;
         currentElem = currentElem->right;
+        if (list->freer)
+            list->freer(sentencedElem->value);
         free(sentencedElem);
     } while (sentencedElem != list->rightGuard);
 
@@ -41,14 +50,16 @@ void listDelete(list_t *list) {
 
 
 
-holdType listFirst(list_t *list) {
+void* listFirst(list_t *list) {
     assert(!listIsEmpty(list));
+    assert(list->leftGuard->right->value);
     return list->leftGuard->right->value;
 }
 
 
-holdType listLast(list_t *list) {
+void* listLast(list_t *list) {
     assert(!listIsEmpty(list));
+    assert(list->leftGuard->right->value);
     return list->rightGuard->left->value;
 }
 
@@ -56,9 +67,9 @@ holdType listLast(list_t *list) {
 static listElem* listNthElem(list_t *list, uint32_t index) {
     assert(!listIsEmpty(list));
     sublist elemPtr;
-    if (index * 2 > list->size) {
+    if (index * 2 > list->logicalSize) {
         elemPtr = list->rightGuard->left;
-        for (uint32_t i = list->size - 1; i > index; --i) {
+        for (uint32_t i = list->logicalSize - 1; i > index; --i) {
             elemPtr = elemPtr->left;
         }
     }
@@ -72,13 +83,13 @@ static listElem* listNthElem(list_t *list, uint32_t index) {
 }
 
 
-holdType listNth(list_t *list, uint32_t index) {
+void* listNth(list_t *list, uint32_t index) {
     return listNthElem(list, index)->value;
 }
 
 
-void listAppend(list_t *list, holdType value) {
-    listElem *newElem = listCreateElem(value);
+void listAppend(list_t *list, void *value) {
+    listElem *newElem = listCreateElem(list->elemSize, value);
     newElem->left = list->rightGuard->left;
     newElem->right = list->rightGuard;
     list->rightGuard->left->right = newElem;
@@ -86,8 +97,8 @@ void listAppend(list_t *list, holdType value) {
 }
 
 
-void listPrepend(list_t *list, holdType value) {
-    listElem *newElem = listCreateElem(value);
+void listPrepend(list_t *list, void *value) {
+    listElem *newElem = listCreateElem(list->elemSize, value);
     newElem->right = list->leftGuard->right;
     newElem->left = list->leftGuard;
     list->leftGuard->right->left = newElem;
@@ -95,10 +106,10 @@ void listPrepend(list_t *list, holdType value) {
 }
 
 
-void listInsert(list_t *list, uint32_t index, holdType value) {
+void listInsert(list_t *list, uint32_t index, void *value) {
     listElem *placeAfter = listNthElem(list, index);
     listElem *placeBefore = placeAfter->left;
-    listElem *newElem = listCreateElem(value);
+    listElem *newElem = listCreateElem(list->elemSize, value);
 
     placeBefore->right = newElem;
     placeAfter->left = newElem;
@@ -139,7 +150,7 @@ void listRemoveNth(list_t *list, uint32_t index) {
 
 
 
-void listIterLeft(void (*fun)(char), list_t *list) {
+void listIterLeft(void (*fun)(void*), list_t *list) {
     listElem *currentElem = list->leftGuard->right;
     while (currentElem != list->rightGuard) {
         fun(currentElem->value);
@@ -149,7 +160,7 @@ void listIterLeft(void (*fun)(char), list_t *list) {
 
 
 
-void listIterRight(void (*fun)(char), list_t *list) {
+void listIterRight(void (*fun)(void*), list_t *list) {
     listElem *currentElem = list->rightGuard->left;
     while (currentElem != list->leftGuard) {
         fun(currentElem->value);
