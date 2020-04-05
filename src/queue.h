@@ -11,7 +11,7 @@ typedef list_t queue_t;
 bool queueIsEmpty(queue_t*);
 
 
-queue_t* queueNew(size_t elemSize, freer_t freer);
+queue_t* queueNew(size_t elemSize);
 
 
 void queueDelete(queue_t*);

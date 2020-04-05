@@ -70,7 +70,8 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y);
 
 /** @brief Podaje liczbę pól zajętych przez gracza.
  * Podaje liczbę pól zajętych przez gracza @p player.
- * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] g
+ * – wskaźnik na strukturę przechowującą stan gry,
  * @param[in] player  – numer gracza, liczba dodatnia niewiększa od wartości
  *                      @p players z funkcji @ref gamma_new.
  * @return Liczba pól zajętych przez gracza lub zero,

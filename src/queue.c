@@ -6,8 +6,8 @@ bool queueIsEmpty(queue_t *queue) {
 }
 
 
-queue_t* queueNew(size_t elemSize, freer_t freer) {
-    return listNew(elemSize, freer);
+queue_t* queueNew(size_t elemSize) {
+    return listNew(elemSize);
 }
 
 

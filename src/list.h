@@ -25,7 +25,6 @@ struct listElem {
 typedef struct {
     uint32_t logicalSize;
     size_t elemSize;
-    freer_t freer;
     sublist leftGuard;
     sublist rightGuard;
 } list_t;
@@ -34,7 +33,13 @@ typedef struct {
 bool listIsEmpty(list_t*);
 
 
-list_t* listNew(size_t elemSize, freer_t freer);
+bool listIn(list_t*, void *value);
+
+
+list_t* listNew(size_t elemSize);
+
+
+void listClear(list_t*);
 
 
 void listDelete(list_t*);
@@ -67,12 +72,19 @@ void listRemoveFirst(list_t*);
 void listRemoveNth(list_t*, uint32_t index);
 
 
+void* listPopFirst(list_t*);
+
+
+void* listPopLast(list_t*);
+
+
 void listIterLeft(void (*)(void*), list_t*);
 
 
 void listIterRight(void (*)(void*), list_t*);
 
 
+void listIterKamikaze(void (*fun)(void*, void*), list_t *list, void*);
 
 
 #endif //GAMMA_LIST_H

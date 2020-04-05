@@ -1,7 +1,18 @@
 #include "list.h"
 
+
 bool listIsEmpty(list_t *list) {
     return list->leftGuard->right == list->rightGuard;
+}
+
+
+bool listIn(list_t *list, void *value) {
+    listElem *currentElem = list->leftGuard->right;
+    while (currentElem != list->rightGuard) {
+        if (currentElem->value == value)
+            return true;
+    }
+    return false;
 }
 
 
@@ -17,7 +28,7 @@ static listElem* listCreateElem(size_t elemSize, void *value) {
 }
 
 
-list_t* listNew(size_t elemSize, freer_t freer) {
+list_t* listNew(size_t elemSize) {
     sublist leftGuard = listCreateElem(elemSize, NULL);
     sublist rightGuard = listCreateElem(elemSize, NULL);
 
@@ -28,23 +39,30 @@ list_t* listNew(size_t elemSize, freer_t freer) {
 
     list_t *newList = malloc(sizeof(list_t));
     *newList = (list_t){.leftGuard = leftGuard, .rightGuard = rightGuard,
-                        .freer = freer, .logicalSize = 0, .elemSize = elemSize};
+                        .logicalSize = 0, .elemSize = elemSize};
 
     return newList;
 }
 
 
-void listDelete(list_t *list) {
+void listClear(list_t *list) {
     listElem *sentencedElem;
     sublist currentElem = list->leftGuard;
+
     do {
         sentencedElem = currentElem;
         currentElem = currentElem->right;
-        if (list->freer)
-            list->freer(sentencedElem->value);
         free(sentencedElem);
     } while (sentencedElem != list->rightGuard);
 
+    list->leftGuard->right = list->rightGuard;
+    list->rightGuard->left = list->leftGuard;
+}
+
+
+
+void listDelete(list_t *list) {
+    listClear(list);
     free(list);
 }
 
@@ -149,6 +167,19 @@ void listRemoveNth(list_t *list, uint32_t index) {
 }
 
 
+void* listPopFirst(list_t *list) {
+    void *value = listFirst(list);
+    listRemoveFirst(list);
+    return value;
+}
+
+
+void* listPopLast(list_t *list) {
+    void *value = listLast(list);
+    listRemoveLast(list);
+    return value;
+}
+
 
 void listIterLeft(void (*fun)(void*), list_t *list) {
     listElem *currentElem = list->leftGuard->right;
@@ -166,4 +197,14 @@ void listIterRight(void (*fun)(void*), list_t *list) {
         fun(currentElem->value);
         currentElem = currentElem->left;
     }
+}
+
+void listIterKamikaze(void (*fun)(void*, void*), list_t *list, void *anotherParam) {
+    sublist incomingKamikaze = list->leftGuard->right;
+    while (incomingKamikaze != list->rightGuard) {
+        fun(anotherParam, incomingKamikaze->value);
+        incomingKamikaze = incomingKamikaze->right;
+        free(incomingKamikaze->left);
+    }
+    listDelete(list);
 }
