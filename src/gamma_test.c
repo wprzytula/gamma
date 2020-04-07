@@ -63,14 +63,11 @@ int main() {
   assert(!gamma_move(g, 1, 5, 5));
   assert(gamma_free_fields(g, 1) == 6);
   assert(gamma_move(g, 1, 0, 1));
-    player_t player1_move_nth = g->players[0];
-    assert(gamma_free_fields(g, 1) == 95);
+  assert(gamma_free_fields(g, 1) == 95);
   assert(gamma_move(g, 1, 5, 5));
   assert(!gamma_move(g, 1, 6, 6));
   assert(gamma_busy_fields(g, 1) == 5);
-    player_t player2_move_nth = g->players[1];
-    uint64_t a = gamma_free_fields(g, 1);
-    assert(gamma_free_fields(g, 1) == 10);
+  assert(gamma_free_fields(g, 1) == 10);
   assert(gamma_move(g, 2, 2, 1));
   assert(gamma_move(g, 2, 1, 1));
   assert(gamma_free_fields(g, 1) == 9);

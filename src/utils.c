@@ -181,7 +181,9 @@ bool start_bfs(gamma_t *g, bfs_mode mode, uint32_t player,
             x = x_coords[i];
             y = y_coords[i];
 
-            if (valid_coords(g, x, y, i) && get_owner(g, x, y) == player) {
+            if (belongs_to_player(g, player, x, y, i) &&
+                ((mode == TEST && !visited(g, x, y)) ||
+                 (mode != TEST && visited(g, x, y)))) {
                 coords = malloc(sizeof(coords_t));
                 coords->x = x;
                 coords->y = y;

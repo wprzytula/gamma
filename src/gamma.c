@@ -11,7 +11,6 @@
 #include <assert.h>
 #include "gamma.h"
 #include "list.h"
-#include "queue.h"
 #include "utils.h"
 
 #include <stdio.h>
@@ -90,12 +89,12 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     uint32_t x_;
     uint32_t y_;
 
-    printf("Player %u moving into field %ux %uy\n", player + 1, x, y);
+//    printf("Player %u moving into field %ux %uy\n", player + 1, x, y);
 
     for (direction_t i = UP; i <= LEFT; ++i) {
         x_ = x_coords[i];
         y_ = y_coords[i];
-        printf("Testing coords: %ux %uy\n", x_, y_);
+//        printf("Testing coords: %ux %uy\n", x_, y_);
         if (!valid_coords(g, x_, y_, i))
             continue;
 
@@ -105,13 +104,13 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
             owner_ptr = &g->players[owner];
             if (!listIn(to_decrement, owner_ptr)) {
                 listAppend(to_decrement, owner_ptr);
-                printf("This field was adjacent to player %u\n", owner);
+//                printf("This field was adjacent to player %u\n", owner);
                 --g->players[owner].available_adjacent_fields;
             }
         }
         // calculate the change of current player free adjacent fields counter
         else if (!has_neighbour_of_player(g, player, x_, y_)) {
-            printf("New free adj field: %ux %uy\n", x_, y_);
+//            printf("New free adj field: %ux %uy\n", x_, y_);
             ++g->players[player].available_adjacent_fields;
         }
         // find & union
@@ -132,7 +131,6 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 
     return true;
 }
-
 
 
 bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
