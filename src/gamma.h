@@ -11,6 +11,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "utils.h"
 
 /**
  * Struktura przechowująca stan gry.

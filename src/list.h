@@ -4,12 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <string.h>
 
-
-
-typedef void (*freer_t)(void*);
 
 typedef struct listElem listElem;
 
@@ -84,7 +79,7 @@ void listIterLeft(void (*)(void*), list_t*);
 void listIterRight(void (*)(void*), list_t*);
 
 
-void listIterKamikaze(void (*fun)(void*, void*), list_t *list, void*);
+void listIterKamikaze(void (*)(void*, void*), list_t*, void*);
 
 
 #endif //GAMMA_LIST_H

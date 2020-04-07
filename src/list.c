@@ -1,4 +1,7 @@
 #include "list.h"
+#include <string.h>
+#include <assert.h>
+//#include <stdio.h>
 
 
 bool listIsEmpty(list_t *list) {
@@ -8,9 +11,13 @@ bool listIsEmpty(list_t *list) {
 
 bool listIn(list_t *list, void *value) {
     listElem *currentElem = list->leftGuard->right;
+//    printf("%p value compared\n", value);
     while (currentElem != list->rightGuard) {
+//        printf("%p on adj owners list\n", currentElem->value);
         if (currentElem->value == value)
             return true;
+        else
+            currentElem = currentElem->right;
     }
     return false;
 }
@@ -20,10 +27,12 @@ static listElem* listCreateElem(size_t elemSize, void *value) {
     listElem *newElem = malloc(sizeof(listElem));
     newElem->value = malloc(elemSize);
     ///TODO: error handling
+//    printf("Parameter in CreateElem: %p\n", value);
     if (value)
-        memcpy(newElem->value, value, elemSize);
+        newElem->value = value;
     else
         newElem->value = NULL;
+//    printf("Already memcopied: %p\n", newElem->value);
     return newElem;
 }
 
@@ -107,7 +116,9 @@ void* listNth(list_t *list, uint32_t index) {
 
 
 void listAppend(list_t *list, void *value) {
+    //printf("First in Append: %p\n", value);
     listElem *newElem = listCreateElem(list->elemSize, value);
+    //printf("Again in Append: %p\n", newElem->value);
     newElem->left = list->rightGuard->left;
     newElem->right = list->rightGuard;
     list->rightGuard->left->right = newElem;
@@ -190,7 +201,6 @@ void listIterLeft(void (*fun)(void*), list_t *list) {
 }
 
 
-
 void listIterRight(void (*fun)(void*), list_t *list) {
     listElem *currentElem = list->rightGuard->left;
     while (currentElem != list->leftGuard) {
@@ -199,6 +209,7 @@ void listIterRight(void (*fun)(void*), list_t *list) {
     }
 }
 
+
 void listIterKamikaze(void (*fun)(void*, void*), list_t *list, void *anotherParam) {
     sublist incomingKamikaze = list->leftGuard->right;
     while (incomingKamikaze != list->rightGuard) {
@@ -206,5 +217,6 @@ void listIterKamikaze(void (*fun)(void*, void*), list_t *list, void *anotherPara
         incomingKamikaze = incomingKamikaze->right;
         free(incomingKamikaze->left);
     }
-    listDelete(list);
+    free(list->rightGuard);
+    free(list);
 }
