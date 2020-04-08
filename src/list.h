@@ -19,7 +19,6 @@ struct listElem {
 
 typedef struct {
     uint32_t logicalSize;
-    size_t elemSize;
     sublist leftGuard;
     sublist rightGuard;
 } list_t;
@@ -31,7 +30,7 @@ bool listIsEmpty(list_t*);
 bool listIn(list_t*, void *value);
 
 
-list_t* listNew(size_t elemSize);
+list_t* listNew();
 
 
 void listClear(list_t*);

@@ -26,7 +26,6 @@ set(SOURCE_FILES
         src/gamma_test.c
         src/list.c
         src/list.h
-        src/queue.c
         src/queue.h
         src/utils.c
         src/utils.h)

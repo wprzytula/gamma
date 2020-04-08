@@ -11,9 +11,7 @@ bool listIsEmpty(list_t *list) {
 
 bool listIn(list_t *list, void *value) {
     listElem *currentElem = list->leftGuard->right;
-//    printf("%p value compared\n", value);
     while (currentElem != list->rightGuard) {
-//        printf("%p on adj owners list\n", currentElem->value);
         if (currentElem->value == value)
             return true;
         else
@@ -23,23 +21,20 @@ bool listIn(list_t *list, void *value) {
 }
 
 
-static listElem* listCreateElem(size_t elemSize, void *value) {
+static listElem* listCreateElem(void *value) {
     listElem *newElem = malloc(sizeof(listElem));
-    newElem->value = malloc(elemSize);
     ///TODO: error handling
-//    printf("Parameter in CreateElem: %p\n", value);
     if (value)
         newElem->value = value;
     else
         newElem->value = NULL;
-//    printf("Already memcopied: %p\n", newElem->value);
     return newElem;
 }
 
 
-list_t* listNew(size_t elemSize) {
-    sublist leftGuard = listCreateElem(elemSize, NULL);
-    sublist rightGuard = listCreateElem(elemSize, NULL);
+list_t *listNew() {
+    sublist leftGuard = listCreateElem(NULL);
+    sublist rightGuard = listCreateElem(NULL);
 
     leftGuard->left = leftGuard;
     leftGuard->right = rightGuard;
@@ -48,7 +43,7 @@ list_t* listNew(size_t elemSize) {
 
     list_t *newList = malloc(sizeof(list_t));
     *newList = (list_t){.leftGuard = leftGuard, .rightGuard = rightGuard,
-                        .logicalSize = 0, .elemSize = elemSize};
+                        .logicalSize = 0};
 
     return newList;
 }
@@ -56,14 +51,15 @@ list_t* listNew(size_t elemSize) {
 
 void listClear(list_t *list) {
     listElem *sentencedElem;
-    sublist currentElem = list->leftGuard;
+    sublist currentElem = list->leftGuard->right;
 
-    do {
+    while (currentElem != list->rightGuard) {
         sentencedElem = currentElem;
         currentElem = currentElem->right;
         free(sentencedElem);
-    } while (sentencedElem != list->rightGuard);
+    }
 
+    list->logicalSize = 0;
     list->leftGuard->right = list->rightGuard;
     list->rightGuard->left = list->leftGuard;
 }
@@ -72,6 +68,8 @@ void listClear(list_t *list) {
 
 void listDelete(list_t *list) {
     listClear(list);
+    free(list->leftGuard);
+    free(list->rightGuard);
     free(list);
 }
 
@@ -116,34 +114,35 @@ void* listNth(list_t *list, uint32_t index) {
 
 
 void listAppend(list_t *list, void *value) {
-    //printf("First in Append: %p\n", value);
-    listElem *newElem = listCreateElem(list->elemSize, value);
-    //printf("Again in Append: %p\n", newElem->value);
+    listElem *newElem = listCreateElem(value);
     newElem->left = list->rightGuard->left;
     newElem->right = list->rightGuard;
     list->rightGuard->left->right = newElem;
     list->rightGuard->left = newElem;
+    ++list->logicalSize;
 }
 
 
 void listPrepend(list_t *list, void *value) {
-    listElem *newElem = listCreateElem(list->elemSize, value);
+    listElem *newElem = listCreateElem(value);
     newElem->right = list->leftGuard->right;
     newElem->left = list->leftGuard;
     list->leftGuard->right->left = newElem;
     list->leftGuard->right = newElem;
+    ++list->logicalSize;
 }
 
 
 void listInsert(list_t *list, uint32_t index, void *value) {
     listElem *placeAfter = listNthElem(list, index);
     listElem *placeBefore = placeAfter->left;
-    listElem *newElem = listCreateElem(list->elemSize, value);
+    listElem *newElem = listCreateElem(value);
 
     placeBefore->right = newElem;
     placeAfter->left = newElem;
     newElem->right = placeAfter;
     newElem->left = placeAfter;
+    ++list->logicalSize;
 }
 
 
@@ -154,6 +153,7 @@ void listRemoveLast(list_t *list) {
     list->rightGuard->left->left->right = list->rightGuard;
     list->rightGuard->left = list->rightGuard->left->left;
     free(sentencedElem);
+    --list->logicalSize;
 }
 
 
@@ -164,6 +164,7 @@ void listRemoveFirst(list_t *list) {
     list->leftGuard->right->right->left = list->leftGuard;
     list->leftGuard->right = list->leftGuard->right->right;
     free(sentencedElem);
+    --list->logicalSize;
 }
 
 
@@ -174,13 +175,14 @@ void listRemoveNth(list_t *list, uint32_t index) {
     sentencedElem->left->right = sentencedElem->right;
     sentencedElem->right->left = sentencedElem->left;
     free(sentencedElem);
-
+    --list->logicalSize;
 }
 
 
 void* listPopFirst(list_t *list) {
     void *value = listFirst(list);
     listRemoveFirst(list);
+    --list->logicalSize;
     return value;
 }
 
@@ -188,6 +190,7 @@ void* listPopFirst(list_t *list) {
 void* listPopLast(list_t *list) {
     void *value = listLast(list);
     listRemoveLast(list);
+    --list->logicalSize;
     return value;
 }
 
@@ -210,13 +213,15 @@ void listIterRight(void (*fun)(void*), list_t *list) {
 }
 
 
-void listIterKamikaze(void (*fun)(void*, void*), list_t *list, void *anotherParam) {
+void listIterKamikaze(void (*fun)(void*, void*), list_t *list,
+                      void *anotherParam) {
     sublist incomingKamikaze = list->leftGuard->right;
     while (incomingKamikaze != list->rightGuard) {
         fun(anotherParam, incomingKamikaze->value);
         incomingKamikaze = incomingKamikaze->right;
         free(incomingKamikaze->left);
     }
+    free(list->leftGuard);
     free(list->rightGuard);
     free(list);
 }

@@ -54,6 +54,7 @@ void gamma_delete(gamma_t *g) {
         free(g->board[i]);
     }
     free(g->board);
+    free(g);
 }
 
 
@@ -77,8 +78,8 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     field_t *this_field_ptr = &g->board[y][x];
     set_parent(this_field_ptr, this_field_ptr);
 
-    list_t *to_decrement = listNew(sizeof(uint32_t*));
-    list_t *neigh_areas = listNew(sizeof(uint32_t*));
+    list_t *to_decrement = listNew();
+    list_t *neigh_areas = listNew();
 
     uint32_t x_coords[4] = {x, x + 1, x, x - 1};
     uint32_t y_coords[4] = {y + 1, y, y - 1, y};
@@ -161,7 +162,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     uint32_t x_coords[4] = {x, x + 1, x, x - 1};
     uint32_t y_coords[4] = {y + 1, y, y - 1, y};
 
-    list_t *adjacent_areas = listNew(sizeof(field_t*));
+    list_t *adjacent_areas = listNew();
 
     uint32_t x_;
     uint32_t y_;
@@ -178,7 +179,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
             listAppend(adjacent_areas, parent);
         }
         // calculate new owner adjacent free fields change
-        if (valid_coords(g, x_, y_, i) && !is_occupied(g, x, y)
+        if (valid_coords(g, x_, y_, i) && !is_occupied(g, x_, y_)
             && !has_neighbour_of_player(g, new_owner, x_, y_))
             ++new_owner_adj_fields_change;
     }
@@ -199,7 +200,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         x_ = x_coords[i];
         y_ = y_coords[i];
 
-        if (valid_coords(g, x_, y_, i) && !is_occupied(g, x, y)
+        if (valid_coords(g, x_, y_, i) && !is_occupied(g, x_, y_)
             && !has_neighbour_of_player(g, former_owner, x_, y_))
             --former_owner_adj_fields_change;
     }
@@ -236,6 +237,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
                 former_owner_adj_fields_change;
         ++g->players[new_owner].taken_fields;
         --g->players[former_owner].taken_fields;
+        g->players[new_owner].golden_move_available = false;
         succeeded = true;
     }
     set_visited(g, false, x, y);
@@ -293,6 +295,18 @@ bool gamma_golden_possible(gamma_t *g, uint32_t player) {
 char* gamma_board(gamma_t *g) {
     if (g == NULL)
         return NULL;
-    else
-        return "";
+    char *board = malloc((g->height) * (g->width + 1) * sizeof(char) + 1);
+    uint64_t index = 0;
+    for (uint32_t y = g->height - 1; y < g->height; --y) {
+        for (uint32_t x = 0; x < g->width; ++x) {
+            assert(valid_coords(g, x, y, FIXED));
+            if (is_occupied(g, x, y))
+                sprintf(board + index++, "%u", get_owner(g, x, y) + 1);
+            else
+                board[index++] = '.';
+        }
+        board[index++] = '\n';
+    }
+    board[index] = '\0';
+    return board;
 }

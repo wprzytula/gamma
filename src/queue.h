@@ -7,32 +7,49 @@
 typedef list_t queue_t;
 
 
-
-bool queueIsEmpty(queue_t*);
-
-
-queue_t* queueNew(size_t elemSize);
+inline bool queueIsEmpty(queue_t *queue) {
+    return listIsEmpty(queue);
+}
 
 
-void queueDelete(queue_t*);
+inline queue_t* queueNew() {
+    return listNew();
+}
 
 
-void* queuePeek(queue_t*);
+inline void queueDelete(queue_t *queue) {
+    return listDelete(queue);
+}
 
 
-void* queuePeekLast(queue_t*);
+inline void* queuePeek(queue_t *queue) {
+    return listFirst(queue);
+}
 
 
-void queuePush(queue_t*, void* value);
+inline void* queuePeekLast(queue_t *queue) {
+    return listLast(queue);
+}
 
 
-void queuePushBeg(queue_t *queue, void* value);
+inline void queuePush(queue_t *queue, void* value) {
+    listAppend(queue, value);
+}
 
 
-void* queuePop(queue_t*);
+inline void queuePushBeg(queue_t *queue, void* value) {
+    listPrepend(queue, value);
+}
 
 
-void* queuePopLast(list_t*);
+inline void* queuePop(queue_t *queue) {
+    return listPopFirst(queue);
+}
+
+
+inline void* queuePopLast(queue_t *queue) {
+    return listPopLast(queue);
+}
 
 
 #endif //GAMMA_QUEUE_H
