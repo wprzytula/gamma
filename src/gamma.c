@@ -61,7 +61,7 @@ void gamma_delete(gamma_t *g) {
 bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     assert(player != 0);
     --player;
-    if (g == NULL || !valid_coords(g, x, y, FIXED)
+    if (g == NULL || !valid_coords(g, x, y)
         || !valid_player(g, player))
         return false;
     if (g->board[y][x].occupied)
@@ -92,11 +92,11 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 
 //    printf("Player %u moving into field %ux %uy\n", player + 1, x, y);
 
-    for (direction_t i = UP; i <= LEFT; ++i) {
+    for (int i = 0; i <= 3; ++i) {
         x_ = x_coords[i];
         y_ = y_coords[i];
 //        printf("Testing coords: %ux %uy\n", x_, y_);
-        if (!valid_coords(g, x_, y_, i))
+        if (!valid_coords(g, x_, y_))
             continue;
 
         // decrement every neighbouring player free adjacent fields counter
@@ -115,7 +115,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
             ++g->players[player].available_adjacent_fields;
         }
         // find & union
-        if (belongs_to_player(g, player, x_, y_, i)) {
+        if (belongs_to_player(g, player, x_, y_)) {
             field_ptr = get_representative(g, x_, y_);
             if (!listIn(neigh_areas, field_ptr)) {
                 listAppend(neigh_areas, field_ptr);
@@ -137,7 +137,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     assert(player != 0);
     --player;
-    if (g == NULL || !valid_coords(g, x, y, FIXED) || !valid_player(g, player))
+    if (g == NULL || !valid_coords(g, x, y) || !valid_player(g, player))
         return false;
     if (!g->players[player].golden_move_available)
         return false;
@@ -172,14 +172,14 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         y_ = y_coords[i];
 
         // calculate new owner occupied areas change
-        if (belongs_to_player(g, new_owner, x_, y_, i)) {
+        if (belongs_to_player(g, new_owner, x_, y_)) {
             field_t *parent = find_representative(get_representative(g, x_, y_));
             if (!listIn(adjacent_areas, parent))
                 --new_owner_occupied_areas_change;
             listAppend(adjacent_areas, parent);
         }
         // calculate new owner adjacent free fields change
-        if (valid_coords(g, x_, y_, i) && !is_occupied(g, x_, y_)
+        if (valid_coords(g, x_, y_) && !is_occupied(g, x_, y_)
             && !has_neighbour_of_player(g, new_owner, x_, y_))
             ++new_owner_adj_fields_change;
     }
@@ -200,7 +200,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         x_ = x_coords[i];
         y_ = y_coords[i];
 
-        if (valid_coords(g, x_, y_, i) && !is_occupied(g, x_, y_)
+        if (valid_coords(g, x_, y_) && !is_occupied(g, x_, y_)
             && !has_neighbour_of_player(g, former_owner, x_, y_))
             --former_owner_adj_fields_change;
     }
@@ -208,7 +208,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     // calculate former owner occupied areas change
     for (int i = 0; i < 4; ++i) {
         if (start_bfs(g, TEST, former_owner,
-                      x_coords[i], y_coords[i], i))
+                      x_coords[i], y_coords[i]))
             ++former_owner_occupied_areas_change;
     }
 
@@ -243,7 +243,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     set_visited(g, false, x, y);
     for (int i = 0; i < 4; ++i) {
         start_bfs(g, succeeded ? SAVE : UNDO, former_owner,
-                  x_coords[i], y_coords[i], i);
+                  x_coords[i], y_coords[i]);
     }
     return succeeded;
 }
@@ -299,7 +299,7 @@ char* gamma_board(gamma_t *g) {
     uint64_t index = 0;
     for (uint32_t y = g->height - 1; y < g->height; --y) {
         for (uint32_t x = 0; x < g->width; ++x) {
-            assert(valid_coords(g, x, y, FIXED));
+            assert(valid_coords(g, x, y));
             if (is_occupied(g, x, y))
                 sprintf(board + index++, "%u", get_owner(g, x, y) + 1);
             else
