@@ -85,7 +85,6 @@ void set_visited(gamma_t *g, bool flag, uint32_t x, uint32_t y) {
 }
 
 
-
 field_t *find_representative(field_t *field_ptr) {
     assert(field_ptr);
     list_t *trace = listNew();

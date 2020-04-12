@@ -59,7 +59,6 @@ void gamma_delete(gamma_t *g) {
 
 
 bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
-    assert(player != 0);
     --player;
     if (g == NULL || !valid_coords(g, x, y)
         || !valid_player(g, player))
@@ -135,7 +134,6 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 
 
 bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
-    assert(player != 0);
     --player;
     if (g == NULL || !valid_coords(g, x, y) || !valid_player(g, player))
         return false;
@@ -173,7 +171,8 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 
         // calculate new owner occupied areas change
         if (belongs_to_player(g, new_owner, x_, y_)) {
-            field_t *parent = find_representative(get_representative(g, x_, y_));
+            field_t *parent =
+                    get_representative(g, x_, y_);
             if (!listIn(adjacent_areas, parent))
                 --new_owner_occupied_areas_change;
             listAppend(adjacent_areas, parent);
@@ -250,7 +249,6 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 
 
 uint64_t gamma_busy_fields(gamma_t *g, uint32_t player) {
-    assert(player != 0);
     --player;
     if (g == NULL || !valid_player(g, player))
         return 0;
@@ -260,7 +258,6 @@ uint64_t gamma_busy_fields(gamma_t *g, uint32_t player) {
 
 
 uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {
-    assert(player != 0);
     --player;
     if (g == NULL || !valid_player(g, player)) {
         return 0;
@@ -279,7 +276,6 @@ uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {
 
 
 bool gamma_golden_possible(gamma_t *g, uint32_t player) {
-    assert(player != 0);
     --player;
     if (g != NULL && valid_player(g, player)
         && g->players[player].golden_move_available) {
