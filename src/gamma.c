@@ -63,7 +63,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     if (g == NULL || !valid_coords(g, x, y)
         || !valid_player(g, player))
         return false;
-    if (g->board[y][x].occupied)
+    if (is_occupied(g, x, y))
         return false;
     if (g->players[player].occupied_areas == g->max_areas
         && !has_neighbour_of_player(g, player, x, y))
@@ -74,7 +74,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     ++g->players[player].occupied_areas;
 
     // init new area further unions
-    field_t *this_field_ptr = &g->board[y][x];
+    field_t *this_field_ptr = get_field_ptr(g, x, y);
     set_parent(this_field_ptr, this_field_ptr);
 
     list_t *to_decrement = listNew();
@@ -89,12 +89,9 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     uint32_t x_;
     uint32_t y_;
 
-//    printf("Player %u moving into field %ux %uy\n", player + 1, x, y);
-
-    for (int i = 0; i <= 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         x_ = x_coords[i];
         y_ = y_coords[i];
-//        printf("Testing coords: %ux %uy\n", x_, y_);
         if (!valid_coords(g, x_, y_))
             continue;
 
@@ -104,13 +101,11 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
             owner_ptr = &g->players[owner];
             if (!listIn(to_decrement, owner_ptr)) {
                 listAppend(to_decrement, owner_ptr);
-//                printf("This field was adjacent to player %u\n", owner);
                 --g->players[owner].available_adjacent_fields;
             }
         }
         // calculate the change of current player free adjacent fields counter
         else if (!has_neighbour_of_player(g, player, x_, y_)) {
-//            printf("New free adj field: %ux %uy\n", x_, y_);
             ++g->players[player].available_adjacent_fields;
         }
         // find & union
@@ -133,13 +128,20 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 }
 
 
+// BFS going through every occupied field adjacent to the chosen one
+// toggling the visited flag on both player fields and adjacent free fields.
+
+// and finally, the work shall be done:
+// if any player exceeds the allowed number of occupied areas,
+// the whole golden move fails :(
+// we undo all the changes, using the second BFS.
 bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     --player;
     if (g == NULL || !valid_coords(g, x, y) || !valid_player(g, player))
         return false;
     if (!g->players[player].golden_move_available)
         return false;
-    if (!is_occupied(g, x, y) || get_owner(g, x, y) == player)
+    if (!is_occupied(g, x, y) || belongs_to_player(g, player, x, y))
         return false;
     if (g->players[player].occupied_areas == g->max_areas
         && !has_neighbour_of_player(g, player, x, y))
@@ -148,41 +150,17 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     // now, when all initial prerequisites are met,
     // let's try to perform the actual *GOLDEN MOVE*
 
-    // but first set up some counters and calculate some things
     uint32_t former_owner = get_owner(g, x, y);
     uint32_t new_owner = player;
-
-    int32_t former_owner_adj_fields_change = 0;
-    int32_t new_owner_adj_fields_change = 0;
-    int32_t new_owner_occupied_areas_change = 1;
-    int32_t former_owner_occupied_areas_change = -1;
-
     uint32_t x_coords[4] = {x, x + 1, x, x - 1};
     uint32_t y_coords[4] = {y + 1, y, y - 1, y};
 
-    list_t *adjacent_areas = listNew();
-
-    uint32_t x_;
-    uint32_t y_;
-
-    for (int i = 0; i < 4; ++i) {
-        x_ = x_coords[i];
-        y_ = y_coords[i];
-
-        // calculate new owner occupied areas change
-        if (belongs_to_player(g, new_owner, x_, y_)) {
-            field_t *parent =
-                    get_representative(g, x_, y_);
-            if (!listIn(adjacent_areas, parent))
-                --new_owner_occupied_areas_change;
-            listAppend(adjacent_areas, parent);
-        }
-        // calculate new owner adjacent free fields change
-        if (valid_coords(g, x_, y_) && !is_occupied(g, x_, y_)
-            && !has_neighbour_of_player(g, new_owner, x_, y_))
-            ++new_owner_adj_fields_change;
-    }
-    listDelete(adjacent_areas);
+    int32_t new_owner_adj_fields_change =
+            calculate_new_owner_adj_free_fields_change(
+                    g, new_owner, x_coords, y_coords);
+    int32_t new_owner_occupied_areas_change =
+            calculate_new_owner_occupied_areas_change(
+                    g, new_owner, x_coords, y_coords);
 
     // skipping linear time BFSes if the golden move is evidently impossible
     if (g->players[new_owner].occupied_areas + new_owner_occupied_areas_change
@@ -194,31 +172,14 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     set_owner(g, new_owner, x, y);
     set_visited(g, true, x, y);
 
-    // calculate former owner adjacent free fields change
-    for (int i = 0; i < 4; ++i) {
-        x_ = x_coords[i];
-        y_ = y_coords[i];
+    int32_t former_owner_adj_fields_change =
+            calculate_former_owner_adj_free_fields_change(
+                    g, former_owner, x_coords, y_coords);
+    int32_t former_owner_occupied_areas_change =
+            calculate_former_owner_occupied_areas_change(
+                    g, former_owner, x_coords, y_coords);
 
-        if (valid_coords(g, x_, y_) && !is_occupied(g, x_, y_)
-            && !has_neighbour_of_player(g, former_owner, x_, y_))
-            --former_owner_adj_fields_change;
-    }
-
-    // calculate former owner occupied areas change
-    for (int i = 0; i < 4; ++i) {
-        if (start_bfs(g, TEST, former_owner,
-                      x_coords[i], y_coords[i]))
-            ++former_owner_occupied_areas_change;
-    }
-
-    // BFS going through every occupied field adjacent to the chosen one
-    // toggling the visited flag on both player fields and adjacent free fields.
-
-    // and finally, the work shall be done:
-    // if any player exceeds the allowed number of occupied areas,
-    // the whole golden move fails :(
-    // we undo all the changes, using the second BFS.
-
+    // failed or not?
     if (g->players[former_owner].occupied_areas +
         former_owner_occupied_areas_change > g->max_areas) {
         golden_move_failed:
@@ -239,9 +200,10 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         g->players[new_owner].golden_move_available = false;
         succeeded = true;
     }
+    // clean up and, if succeeded, flush areas changes by uniting
     set_visited(g, false, x, y);
     for (int i = 0; i < 4; ++i) {
-        start_bfs(g, succeeded ? SAVE : UNDO, former_owner,
+        start_bfs(g, succeeded ? UNITE : UNDO, former_owner,
                   x_coords[i], y_coords[i]);
     }
     return succeeded;
