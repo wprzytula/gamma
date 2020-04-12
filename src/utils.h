@@ -1,3 +1,12 @@
+/** @file
+ * Implementacja klasy przechowującej stan gry gamma
+ *
+ * @author Wojciech Przytuła <wp418383@students.mimuw.edu.pl>
+ * @copyright Uniwersytet Warszawski
+ * @date 25.03.2020
+ */
+
+
 #ifndef GAMMA_UTILS_H
 #define GAMMA_UTILS_H
 

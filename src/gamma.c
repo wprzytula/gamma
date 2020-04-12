@@ -113,7 +113,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
             field_ptr = get_representative(g, x_, y_);
             if (!listIn(neigh_areas, field_ptr)) {
                 listAppend(neigh_areas, field_ptr);
-                --g->players[player].occupied_areas;
+                g->players[player].occupied_areas--;
             }
             unite_areas(g, x_, y_, x, y);
         }
@@ -123,6 +123,9 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 
     // actual move
     set_owner(g, player, x, y);
+
+
+    //assert(said_areas(g, player) == real_areas(g, player));
 
     return true;
 }
@@ -198,6 +201,14 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         ++g->players[new_owner].taken_fields;
         --g->players[former_owner].taken_fields;
         g->players[new_owner].golden_move_available = false;
+
+        for (int i = 0; i < 4; ++i) {
+            if (belongs_to_player(g, new_owner, x_coords[i], y_coords[i])) {
+                unite_areas(g, x_coords[i], y_coords[i], x, y);
+                break;
+            }
+        }
+
         succeeded = true;
     }
     // clean up and, if succeeded, flush areas changes by uniting
@@ -206,6 +217,15 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         start_bfs(g, succeeded ? UNITE : UNDO, former_owner,
                   x_coords[i], y_coords[i]);
     }
+
+    uint64_t said_areas_former = said_areas(g, former_owner);
+    uint64_t real_areas_former = real_areas(g, former_owner);
+    uint64_t said_areas_new = said_areas(g, new_owner);
+    uint64_t real_areas_new = real_areas(g, new_owner);
+
+    assert(said_areas_former == real_areas_former);
+    assert(said_areas_new == real_areas_new);
+
     return succeeded;
 }
 
@@ -267,4 +287,27 @@ char* gamma_board(gamma_t *g) {
     }
     board[index] = '\0';
     return board;
+}
+
+
+uint64_t said_areas(gamma_t *g, uint32_t player) {
+    return g->players[player].occupied_areas;
+}
+
+uint64_t real_areas(gamma_t *g, uint32_t player) {
+    uint64_t counter = 0;
+    for (uint32_t y = 0; y < g->height; ++y) {
+        for (uint32_t x = 0; x < g->width; ++x) {
+            if (belongs_to_player(g, player, x, y)) {
+                if (start_bfs(g, TEST, player, x, y))
+                        ++counter;
+            }
+        }
+    }
+    for (uint32_t y = 0; y < g->height; ++y) {
+        for (uint32_t x = 0; x < g->width; ++x) {
+            set_visited(g, false, x, y);
+        }
+    }
+    return counter;
 }
