@@ -1,17 +1,18 @@
+/** @file
+ * Implementacja listy przechowującej wskaźniki jako wartości.
+ *
+ * @author Wojciech Przytuła <wp418383@students.mimuw.edu.pl>
+ * @copyright Uniwersytet Warszawski
+ * @date 27.03.2020
+ */
+
 #include "list.h"
 #include <string.h>
-#include <assert.h>
-//#include <stdio.h>
 
 
-bool listIsEmpty(list_t *list) {
-    return list->leftGuard->right == list->rightGuard;
-}
-
-
-bool listIn(list_t *list, void *value) {
-    listElem *currentElem = list->leftGuard->right;
-    while (currentElem != list->rightGuard) {
+bool list_in(list_t *list, void *value) {
+    list_elem_t *currentElem = list->left_guard->right;
+    while (currentElem != list->right_guard) {
         if (currentElem->value == value)
             return true;
         else
@@ -20,21 +21,25 @@ bool listIn(list_t *list, void *value) {
     return false;
 }
 
-
-static listElem* listCreateElem(void *value) {
-    listElem *newElem = malloc(sizeof(listElem));
-    ///TODO: error handling
-    if (value)
-        newElem->value = value;
-    else
-        newElem->value = NULL;
+/** @brief Tworzy nowy element listy.
+ * Alokuje pamięć na nowy element listy.
+ * Inicjuje ten element i przypisuje mu wartość @p value.
+ * @param value  - wartość nowego elementu listy
+ * @return Wskaźnik na utworzony element lub NULL, gdy nie udało się
+ * zaalokować pamięci.
+ */
+static list_elem_t* listCreateElem(void *value) {
+    list_elem_t *newElem = malloc(sizeof(list_elem_t));
+    if (!newElem)
+        return NULL;
+    newElem->value = value;
     return newElem;
 }
 
 
-list_t *listNew() {
-    sublist leftGuard = listCreateElem(NULL);
-    sublist rightGuard = listCreateElem(NULL);
+list_t *list_new() {
+    list_elem_t *leftGuard = listCreateElem(NULL);
+    list_elem_t *rightGuard = listCreateElem(NULL);
 
     leftGuard->left = leftGuard;
     leftGuard->right = rightGuard;
@@ -42,186 +47,122 @@ list_t *listNew() {
     rightGuard->right = rightGuard;
 
     list_t *newList = malloc(sizeof(list_t));
-    *newList = (list_t){.leftGuard = leftGuard, .rightGuard = rightGuard,
-                        .logicalSize = 0};
+    *newList = (list_t){.left_guard = leftGuard, .right_guard = rightGuard,
+                        .logical_size = 0};
 
     return newList;
 }
 
 
-void listClear(list_t *list) {
-    listElem *sentencedElem;
-    sublist currentElem = list->leftGuard->right;
+void list_clear(list_t *list) {
+    if (!list)
+        return;
+    list_elem_t *sentencedElem;
+    list_elem_t *currentElem = list->left_guard->right;
 
-    while (currentElem != list->rightGuard) {
+    while (currentElem != list->right_guard) {
         sentencedElem = currentElem;
         currentElem = currentElem->right;
         free(sentencedElem);
     }
 
-    list->logicalSize = 0;
-    list->leftGuard->right = list->rightGuard;
-    list->rightGuard->left = list->leftGuard;
+    list->logical_size = 0;
+    list->left_guard->right = list->right_guard;
+    list->right_guard->left = list->left_guard;
 }
 
 
-
-void listDelete(list_t *list) {
-    listClear(list);
-    free(list->leftGuard);
-    free(list->rightGuard);
+void list_delete(list_t *list) {
+    list_clear(list);
+    free(list->left_guard);
+    free(list->right_guard);
     free(list);
 }
 
 
-
-void* listFirst(list_t *list) {
-    assert(!listIsEmpty(list));
-    assert(list->leftGuard->right->value);
-    return list->leftGuard->right->value;
+void* list_first(list_t *list) {
+    assert(!list_is_empty(list));
+    return list->left_guard->right->value;
 }
 
 
-void* listLast(list_t *list) {
-    assert(!listIsEmpty(list));
-    assert(list->leftGuard->right->value);
-    return list->rightGuard->left->value;
+void* list_last(list_t *list) {
+    assert(!list_is_empty(list));
+    return list->right_guard->left->value;
 }
 
 
-static listElem* listNthElem(list_t *list, uint32_t index) {
-    assert(!listIsEmpty(list));
-    sublist elemPtr;
-    if (index * 2 > list->logicalSize) {
-        elemPtr = list->rightGuard->left;
-        for (uint32_t i = list->logicalSize - 1; i > index; --i) {
-            elemPtr = elemPtr->left;
-        }
-    }
-    else {
-        elemPtr = list->leftGuard->right;
-        for (uint32_t i = 0; i < index; ++i) {
-            elemPtr = elemPtr->right;
-        }
-    }
-    return elemPtr;
+void list_append(list_t *list, void *value) {
+    assert(list);
+    list_elem_t *newElem = listCreateElem(value);
+    newElem->left = list->right_guard->left;
+    newElem->right = list->right_guard;
+    list->right_guard->left->right = newElem;
+    list->right_guard->left = newElem;
+    ++list->logical_size;
 }
 
 
-void* listNth(list_t *list, uint32_t index) {
-    return listNthElem(list, index)->value;
+void list_prepend(list_t *list, void *value) {
+    assert(list);
+    list_elem_t *newElem = listCreateElem(value);
+    newElem->right = list->left_guard->right;
+    newElem->left = list->left_guard;
+    list->left_guard->right->left = newElem;
+    list->left_guard->right = newElem;
+    ++list->logical_size;
 }
 
 
-void listAppend(list_t *list, void *value) {
-    listElem *newElem = listCreateElem(value);
-    newElem->left = list->rightGuard->left;
-    newElem->right = list->rightGuard;
-    list->rightGuard->left->right = newElem;
-    list->rightGuard->left = newElem;
-    ++list->logicalSize;
-}
+void list_remove_last(list_t *list) {
+    assert(!list_is_empty(list));
+    list_elem_t *sentencedElem = list->right_guard->left;
 
-
-void listPrepend(list_t *list, void *value) {
-    listElem *newElem = listCreateElem(value);
-    newElem->right = list->leftGuard->right;
-    newElem->left = list->leftGuard;
-    list->leftGuard->right->left = newElem;
-    list->leftGuard->right = newElem;
-    ++list->logicalSize;
-}
-
-
-void listInsert(list_t *list, uint32_t index, void *value) {
-    listElem *placeAfter = listNthElem(list, index);
-    listElem *placeBefore = placeAfter->left;
-    listElem *newElem = listCreateElem(value);
-
-    placeBefore->right = newElem;
-    placeAfter->left = newElem;
-    newElem->right = placeAfter;
-    newElem->left = placeAfter;
-    ++list->logicalSize;
-}
-
-
-void listRemoveLast(list_t *list) {
-    assert(!listIsEmpty(list));
-    listElem *sentencedElem = list->rightGuard->left;
-
-    list->rightGuard->left->left->right = list->rightGuard;
-    list->rightGuard->left = list->rightGuard->left->left;
+    list->right_guard->left->left->right = list->right_guard;
+    list->right_guard->left = list->right_guard->left->left;
     free(sentencedElem);
-    --list->logicalSize;
+    --list->logical_size;
 }
 
 
-void listRemoveFirst(list_t *list) {
-    assert(!listIsEmpty(list));
-    listElem *sentencedElem = list->leftGuard->right;
+void list_remove_first(list_t *list) {
+    assert(!list_is_empty(list));
+    list_elem_t *sentencedElem = list->left_guard->right;
 
-    list->leftGuard->right->right->left = list->leftGuard;
-    list->leftGuard->right = list->leftGuard->right->right;
+    list->left_guard->right->right->left = list->left_guard;
+    list->left_guard->right = list->left_guard->right->right;
     free(sentencedElem);
-    --list->logicalSize;
+    --list->logical_size;
 }
 
 
-void listRemoveNth(list_t *list, uint32_t index) {
-    assert(!listIsEmpty(list));
-    listElem *sentencedElem = listNthElem (list, index);
-
-    sentencedElem->left->right = sentencedElem->right;
-    sentencedElem->right->left = sentencedElem->left;
-    free(sentencedElem);
-    --list->logicalSize;
-}
-
-
-void* listPopFirst(list_t *list) {
-    void *value = listFirst(list);
-    listRemoveFirst(list);
-    --list->logicalSize;
+void* list_pop_first(list_t *list) {
+    void *value = list_first(list);
+    list_remove_first(list);
+    --list->logical_size;
     return value;
 }
 
 
-void* listPopLast(list_t *list) {
-    void *value = listLast(list);
-    listRemoveLast(list);
-    --list->logicalSize;
+void* list_pop_last(list_t *list) {
+    void *value = list_last(list);
+    list_remove_last(list);
+    --list->logical_size;
     return value;
 }
 
 
-void listIterLeft(void (*fun)(void*), list_t *list) {
-    listElem *currentElem = list->leftGuard->right;
-    while (currentElem != list->rightGuard) {
-        fun(currentElem->value);
-        currentElem = currentElem->right;
+void list_iter_kamikaze(void (*fun)(void*, void*), list_t *list,
+                        void *another_param) {
+    assert(list);
+    assert(fun);
+    list_elem_t *incoming_kamikaze = list->left_guard->right;
+    while (incoming_kamikaze != list->right_guard) {
+        fun(another_param, incoming_kamikaze->value);
+        incoming_kamikaze = incoming_kamikaze->right;
+        free(incoming_kamikaze->left);
     }
-}
-
-
-void listIterRight(void (*fun)(void*), list_t *list) {
-    listElem *currentElem = list->rightGuard->left;
-    while (currentElem != list->leftGuard) {
-        fun(currentElem->value);
-        currentElem = currentElem->left;
-    }
-}
-
-
-void listIterKamikaze(void (*fun)(void*, void*), list_t *list,
-                      void *anotherParam) {
-    sublist incomingKamikaze = list->leftGuard->right;
-    while (incomingKamikaze != list->rightGuard) {
-        fun(anotherParam, incomingKamikaze->value);
-        incomingKamikaze = incomingKamikaze->right;
-        free(incomingKamikaze->left);
-    }
-    free(list->leftGuard);
-    free(list->rightGuard);
+    free(list->left_guard);
+    free(list->right_guard);
     free(list);
 }

@@ -1,9 +1,10 @@
 /** @file
- * Implementacja klasy przechowującej stan gry gamma
+ * Interfejs klasy zawierającej struktury, typy
+ * i procedury pomocnicze gry gamma.
  *
  * @author Wojciech Przytuła <wp418383@students.mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski
- * @date 25.03.2020
+ * @date 2.04.2020
  */
 
 
@@ -15,45 +16,63 @@
 #include <assert.h>
 #include <stdlib.h>
 
-
+/**
+ * Struktura przechowująca stan pola na planszy.
+ */
 struct field {
-    bool occupied;
-    uint32_t occupied_by;
-    bool already_visited;
-    struct field *parent;
+    bool occupied;          ///< czy na polu stoi pionek
+    uint32_t occupied_by;   ///< czyj pionek stoi na polu
+    bool already_visited;   ///< czy już odwiedzone przez algorytm przeszukiwania
+    struct field *parent;   ///< pole-ojciec w obrębie tego samego obszaru
 };
 
-
+/**
+ * Typ przedstawiający pole na planszy.
+ */
 typedef struct field field_t;
 
-
+/**
+ * Typ przedstawiający rząd pól na planszy.
+ */
 typedef field_t* row_t;
 
-
+/**
+ * Typ przedstawiający planszę.
+ */
 typedef row_t* board_t;
 
-
+/**
+ * Struktura przechowująca dane na temat gracza.
+ */
 typedef struct {
-    bool golden_move_available;
-    uint32_t occupied_areas;
-    uint64_t taken_fields;
-    uint64_t available_adjacent_fields;
+    bool golden_move_available;         ///< czy gracz nie wykonał jeszcze złotego ruchu
+    uint32_t occupied_areas;            ///< ile obszarów zajmuje gracz na planszy
+    uint64_t taken_fields;              ///< ile pól zajmuje gracz na planszy
+    uint64_t available_adjacent_fields; ///< ile pustych pól przylega do pionków gracza
 } player_t;
 
-
+/**
+ * Struktura przechowująca stan gry.
+ */
 struct gamma {
-    uint32_t height;
-    uint32_t width;
-    uint32_t players_num;
-    uint32_t max_areas;
-    player_t *players;
-    board_t board;
+    uint32_t height;        ///< wysokość planszy
+    uint32_t width;         ///< szerokość planszy
+    uint32_t players_num;   ///< liczba graczy biorących udział w rozgrywce
+    uint32_t max_areas;     ///< maksymalna dopuszczalna liczba obszarów
+                            ///< dla każdego gracza
+    player_t *players;      ///< tablica indywidualnych konfiguracji graczy
+    board_t board;          ///< plansza do gry
 };
 
-
+/**
+ * Struktura przechowująca stan gry.
+ */
 typedef struct gamma gamma_t;
 
-
+/**
+ * Typ trybu działania algorytmu przeszukującego obszary gracza
+ * zaatakowanego w złotym ruchu sąsiadujące z zaatakowanym polem.
+ */
 typedef enum {TEST = 0, UNDO = 1, UNITE = 2} bfs_mode;
 
 
@@ -136,9 +155,12 @@ static inline uint32_t get_owner(gamma_t *g, uint32_t x, uint32_t y) {
 
 /** @brief Ustawia podanego gracza jako właściciela pola.
  * Ustawia gracza @p player jako właściciela pola (@p x, @p y).
- * Zakłada, że @p g jest poprawną konfiguracją gry
- * oraz że pole (@p x, @p y) y znajduje się na planszy zadanej w @p g.
- * @param[in,out] g   – wskaźnik na strukturę przechowującą stan gry
+ * Zakłada, że @p g jest poprawną konfiguracją gry, że gracz @p player
+ * bierze udział w rozgrywce oraz że pole (@p x, @p y) y
+ * znajduje się na planszy zadanej w @p g.
+ * @param[in,out] g   – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player  - numer gracza, liczba nieujemna mniejsza od wartości
+ *                      @p players z funkcji @ref gamma_new,
  * @param[in] x       – numer kolumny, liczba nieujemna mniejsza od wartości
  *                      @p width z funkcji @ref gamma_new,
  * @param[in] y       – numer wiersza, liczba nieujemna mniejsza od wartości
@@ -147,6 +169,7 @@ static inline uint32_t get_owner(gamma_t *g, uint32_t x, uint32_t y) {
 static inline void set_owner(gamma_t *g, uint32_t player,
                              uint32_t x, uint32_t y) {
     assert(valid_coords(g, x, y));
+    assert(valid_player(g, player));
     g->board[y][x].occupied = true;
     g->board[y][x].occupied_by = player;
 }
@@ -189,30 +212,36 @@ static inline bool has_neighbour_of_player(gamma_t *g, uint32_t player,
 
 /** @brief Ustawia pierwsze pole jako ojca drugiego pola.
  * Ustawia pole wskazywane przez @p parent_ptr jako ojca pola wskazywanego
- * przez @p child_ptr. Zakłada, że @p g jest poprawną konfiguracją gry,
- * a parent_ptr oraz child_ptr wskazują
- * na poprawne pola na planszy zadanej w @p g.
- * @param[in,out] g      – wskaźnik na strukturę przechowującą stan gry
- * @param[in] parent_ptr – wskaźnik na pole-ojca
- * @param[in] child_ptr  - wskaźnik na pole-syna
+ * przez @p child_ptr. Zakłada, że parent_ptr oraz child_ptr wskazują
+ * na poprawne pola na planszy zadanej w @ref gamma_new.
+ * @param[in] parent_ptr    – wskaźnik na pole-ojca
+ * @param[in,out] child_ptr - wskaźnik na pole-syna
  */
 static inline void set_parent(field_t *parent_ptr, field_t *child_ptr) {
     assert(parent_ptr != NULL && child_ptr != NULL);
     child_ptr->parent = parent_ptr;
 }
 
-
+/** @brief Ustawia pierwsze pole jako ojca drugiego pola.
+ * Rzutuje wskaźniki @p parent_ptr oraz @p child_ptr na typ field_t*,
+ * a następnie ustawia pole wskazywane przez @p parent_ptr jako ojca pola
+ * wskazywanego przez @p child_ptr. Zakłada, parent_ptr oraz child_ptr
+ * wskazują na poprawne pola na planszy zadanej w @ref gamma_new.
+ * @param[in] parent_ptr    – wskaźnik na pole-ojca
+ * @param[in,out] child_ptr - wskaźnik na pole-syna
+ */
 static inline void compress_path(void *parent_ptr, void *child_ptr) {
     assert(parent_ptr != NULL && child_ptr != NULL);
-    set_parent(parent_ptr, (field_t*)child_ptr);
+    set_parent((field_t*)parent_ptr, (field_t*)child_ptr);
 }
 
 /** @brief Daje reprezentanta obszaru, do którego należy pole.
- * Daje wskaźnik przodka pola wskazywanego przez @p filed_ptr, który
- * sam jest swoim ojcem. Zakłada, że field_ptr wskazuje
- * na poprawne pole na planszy zadanej w @p g.
- * @param[in,out] g      – wskaźnik na strukturę przechowującą stan gry
- * @param[in] field_ptr – wskaźnik na pole na planszy zadanej w @p g
+ * Daje wskaźnik przodka pola wskazywanego przez @p field_ptr, który
+ * sam jest swoim ojcem. Dodatkowo dokonuje kompresji ścieżki, ustawiając
+ * znalezionego przodka jako ojca wszystkich swoich potomków. Zakłada, że
+ * field_ptr wskazuje na poprawne pole na planszy zadanej w @ref gamma_new.
+ * @param[in,out] field_ptr – wskaźnik na pole na planszy zadanej
+ *                              w @ref gamma_new.
  * @return Wskaźnik na reprezentanta obszaru do którego należy
  * pole wskazywane przez @p field_ptr.
  */
@@ -221,17 +250,17 @@ field_t* find_representative(field_t *field_ptr);
 /** @brief Łączy obszary, do których należą dane dwa pola.
  * Ustawia reprezentanta obszaru, do którego należy pole (@p x1, @p y1),
  * jako reprezentanta obszaru do którego należy pole (@p x2, @p y2).
- * Zakłada, że @p g jest poprawną konfiguracją gry, oraz że (@p x1, @p y1)
+ * Zakłada, że @p g jest poprawną konfiguracją gry oraz że (@p x1, @p y1)
  * i (@p x2, @p y2) są poprawnymi polami na planszy zadanej w @p g.
- * @param[in,out] g  – wskaźnik na strukturę przechowującą stan gry
+ * @param[in,out] g  – wskaźnik na strukturę przechowującą stan gry,
  * @param[in] x1     – numer kolumny pola ojcowskiego, liczba nieujemna
- *                     mniejsza od wartości @p width z funkcji @ref gamma_new
+ *                     mniejsza od wartości @p width z funkcji @ref gamma_new,
  * @param[in] y1     - numer wiersza pola ojcowskiego, liczba nieujemna
- *                     mniejsza od wartości @p height z funkcji @ref gamma_new
+ *                     mniejsza od wartości @p height z funkcji @ref gamma_new,
  * @param[in] x2     – numer kolumny pola synowskiego, liczba nieujemna
- *                     mniejsza od wartości @p width z funkcji @ref gamma_new
+ *                     mniejsza od wartości @p width z funkcji @ref gamma_new,
  * @param[in] y2     – numer wiersza pola synowskiego, liczba nieujemna
- *                     mniejsza od wartości @p height z funkcji @ref gamma_new
+ *                     mniejsza od wartości @p height z funkcji @ref gamma_new.
  */
 void unite_areas(gamma_t *g, uint32_t x1, uint32_t y1,
                  uint32_t x2, uint32_t y2);
@@ -271,38 +300,98 @@ static inline void set_visited(gamma_t *g, bool flag, uint32_t x, uint32_t y) {
     g->board[y][x].already_visited = flag;
 }
 
-
 /** @brief Uruchamia na danym polu algorytm przeszukiwania obszaru danego gracza.
  * Przechodzi po całym obszarze w którego skład wchodzi pole (@p x, @p y)
  * w trybie @p mode, jeśli znajduje się na nim pionek gracza @p player.
- * ///TODO: opis trybów.
+ * W trybie @p TEST przechodzi po nieodwiedzonych polach, zaś w trybach @p UNDO
+ * i @p UNITE po odwiedzonych. W trybie UNITE dodatkowo łączy odwiedzane
+ * pola w jeden spójny obszar.
  * Zakłada, że @p g jest poprawną konfiguracją gry.
  * @param[in,out] g   – wskaźnik na strukturę przechowującą stan gry
- * @param[in] player  - numer gracza, liczba nieujemna
- * @param[in] x       – numer kolumny, liczba nieujemna
- * @param[in] y       – numer wiersza, liczba nieujemna
- * @return W trybie TEST: wartość @p true, jeśli pole (@p x, @p y) należy do
+ * @param[in] mode    - tryb pracy algorytmu przeszukującego, jedna
+ *                       wartości typu @ref bfs_mode,
+ * @param[in] player  - numer gracza, liczba nieujemna,
+ * @param[in] x       – numer kolumny, liczba nieujemna,
+ * @param[in] y       – numer wiersza, liczba nieujemna.
+ * @return W trybie @p TEST: wartość @p true, jeśli pole (@p x, @p y) należy do
  * gracza @p player oraz nie zostało jeszcze odwiedzone,
- * a @p false w przeciwnym przypadku. W trybach UNDO oraz UNITE:
+ * a @p false w przeciwnym przypadku. W trybach @p UNDO oraz @p UNITE:
  * wartość @p true, jeśli pole (@p x, @p y) należy do gracza @p player
- * oraz zostało już odwiedzone, a @p false w przeciwnym przypadku.
+ * oraz zostało już odwiedzone, a @p false w pozostałych przypadkach.
  */
 bool start_bfs(gamma_t *g, bfs_mode mode, uint32_t player,
                uint32_t x, uint32_t y);
 
-
+/** @brief Oblicza zmianę liczby obszarów gracza wykonującego złoty ruch.
+ * Zaczyna z wartością 1 (ponieważ złoty ruch powoduje potencjalne powstanie
+ * nowego obszaru) i odejmuje liczbę różnych obszarów do których należą
+ * przed złotym ruchem pola (@p x_coords[i], @p y_coords[i]) dla 0 <= i < 4,
+ * jeśli stoi na nich pionek gracza @p new_owner.
+ * Zakłada, że @p g jest poprawną konfiguracją gry.
+ * @param[in,out] g     - wskaźnik na strukturę przechowującą stan gry
+ * @param[in] new_owner - numer gracza wykonującego złoty ruch, liczba nieujemna
+ * @param[in] x_coords  - tablica numerów kolumn pól przyległych do pola
+ *                        na które wykonywany jest złoty ruch, liczba nieujemna
+ * @param[in] y_coords  - tablica numerów wierszy pól przyległych do pola
+ *                        na które wykonywany jest złoty ruch, liczba nieujemna
+ * @return Liczba, o jaką zmieniła się liczba obszarów gracza @p new_owner
+ * w wyniku wykonania przez niego złotego ruchu.
+ */
 int32_t calculate_new_owner_occ_areas_change(gamma_t *g,
         uint32_t new_owner, uint32_t x_coords[], uint32_t y_coords[]);
 
-
+/** @brief Oblicza zmianę liczby pustych pól przyległych do obszarów gracza
+ * wykonującego złoty ruch.
+ * Zlicza pola (@p x_coords[i], @p y_coords[i]) dla 0 <= i < 4, jeśli przed
+ * złotym ruchem nie sąsiadują z żadnym polem zajętym przez gracza @p new_owner.
+ * Zakłada, że @p g jest poprawną konfiguracją gry.
+ * @param[in,out] g     - wskaźnik na strukturę przechowującą stan gry
+ * @param[in] new_owner - numer gracza wykonującego złoty ruch, liczba nieujemna
+ * @param[in] x_coords  - tablica numerów kolumn pól przyległych do pola
+ *                        na które wykonywany jest złoty ruch, liczba nieujemna
+ * @param[in] y_coords  - tablica numerów wierszy pól przyległych do pola
+ *                        na które wykonywany jest złoty ruch, liczba nieujemna
+ * @return Liczba, o jaką zmieniła się liczba pustych pól przyległych
+ * do obszarów gracza wykonującego złoty ruch.
+ */
 int32_t calculate_new_owner_adj_free_fields_change(gamma_t *g,
         uint32_t new_owner, uint32_t x_coords[], uint32_t y_coords[]);
 
-
+/** @brief Oblicza zmianę liczby pustych pól przyległych do obszarów gracza
+ * zaatakowanego w złotym ruchu.
+ * Zlicza pola (@p x_coords[i], @p y_coords[i]) dla 0 <= i < 4, jeśli przed
+ * złotym ruchem nie sąsiadują z żadnym polem zajętym przez gracza @p former_owner.
+ * pionek gracza @p former_owner. Zakłada, że @p g jest poprawną konfiguracją gry.
+ * @param[in,out] g         – wskaźnik na strukturę przechowującą stan gry
+ * @param[in] former_owner  - numer gracza atakowanego w złotym ruchu,
+ *                            liczba nieujemna,
+ * @param[in] x_coords      – tablica numerów kolumn pól przyległych do pola
+ *                            na które wykonywany jest złoty ruch, liczba nieujemna,
+ * @param[in] y_coords      – tablica numerów wierszy pól przyległych do pola
+ *                            na które wykonywany jest złoty ruch, liczba nieujemna.
+ * @return Liczba, o jaką zmieniła się liczba pustych pól przyległych
+ * do obszarów gracza zaatakowanego w złotym ruchu.
+ */
 int32_t calculate_former_owner_adj_free_fields_change(gamma_t *g,
         uint32_t former_owner, uint32_t x_coords[], uint32_t y_coords[]);
 
-
+/** @brief Oblicza zmianę liczby obszarów gracza zaatakowanego w złotym ruchu.
+ * Zaczyna z wartością -1 (ponieważ złoty ruch powoduje potencjalną utratę
+ * jednego obszaru) i dodaje liczbę różnych obszarów do których należą
+ * przed złotym ruchem pola (@p x_coords[i], @p y_coords[i]) dla 0 <= i < 4,
+ * jeśli stoi na nich pionek gracza @p former_owner.
+ * Zakłada, że @p g jest poprawną konfiguracją gry.
+ * @param[in,out] g         – wskaźnik na strukturę przechowującą stan gry
+ * @param[in] former_owner  - numer gracza atakowanego w złotym ruchu,
+ *                            liczba nieujemna,
+ * @param[in] x_coords      – tablica numerów kolumn pól przyległych do pola
+ *                             na które wykonywany jest złoty ruch, liczba nieujemna,
+ * @param[in] y_coords      – tablica numerów wierszy pól przyległych do pola
+ *                             na które wykonywany jest złoty ruch, liczba nieujemna.
+ * @return Liczba, o jaką zmieniła się liczba obszarów gracza @p player
+ * w wyniku wykonania złotego ruchu pole położone pomiędzy polami
+ * (@p x_coords[i], @p y_coords[i]) dla 0 <= i < 4.
+ */
 int32_t calculate_former_owner_occ_areas_change(gamma_t *g,
         uint32_t former_owner, uint32_t x_coords[], uint32_t y_coords[]);
 

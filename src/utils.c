@@ -1,25 +1,35 @@
+/** @file
+ * Implementacja klasy zawierającej procedury pomocnicze gry gamma.
+ *
+ * @author Wojciech Przytuła <wp418383@students.mimuw.edu.pl>
+ * @copyright Uniwersytet Warszawski
+ * @date 2.04.2020
+ */
+
 #include "utils.h"
 #include "list.h"
 #include "queue.h"
 
-
+/**
+ * Struktura przechowująca współrzędne pola na planszy.
+ */
 typedef struct {
-    uint32_t x;
-    uint32_t y;
+    uint32_t x;  ///< numer kolumny
+    uint32_t y;  ///< numer wiersza
 } coords_t;
 
 
 field_t *find_representative(field_t *field_ptr) {
     assert(field_ptr);
-    list_t *trace = listNew();
+    list_t *trace = list_new();
 
     while (field_ptr->parent != field_ptr) {
         assert(field_ptr);
-        listAppend(trace, field_ptr);
+        list_append(trace, field_ptr);
         field_ptr = field_ptr->parent;
     }
     // path compression
-    listIterKamikaze(compress_path, trace, field_ptr);
+    list_iter_kamikaze(compress_path, trace, field_ptr);
 
     return field_ptr;
 }
@@ -55,19 +65,21 @@ bool start_bfs(gamma_t *g, bfs_mode mode, uint32_t player,
     uint32_t x_coords[4];
     uint32_t y_coords[4];
 
-    queue_t *queue = queueNew();
+    queue_t *queue = queue_new();
     coords_t *coords = malloc(sizeof(coords_t));
     coords->x = x;
     coords->y = y;
-    queuePush(queue, coords);
+    queue_push(queue, coords);
 
-    while (!queueIsEmpty(queue)) {
-        coords = queuePop(queue);
+    while (!queue_is_empty(queue)) {
+        coords = queue_pop(queue);
         x = coords->x;
         y = coords->y;
         free(coords);
 
-        assert(valid_coords(g, x, y));
+        if ((visited(g, x, y) && mode == TEST) ||
+            (!visited(g, x, y) && mode != TEST))
+            continue;
         set_visited(g, mode == TEST, x, y);
 
         if (mode == UNITE)
@@ -81,18 +93,17 @@ bool start_bfs(gamma_t *g, bfs_mode mode, uint32_t player,
         for (int i = 0; i < 4; ++i) {
             x = x_coords[i];
             y = y_coords[i];
-
             if (belongs_to_player(g, player, x, y) &&
                 ((mode == TEST && !visited(g, x, y)) ||
                  (mode != TEST && visited(g, x, y)))) {
                 coords = malloc(sizeof(coords_t));
                 coords->x = x;
                 coords->y = y;
-                queuePush(queue, coords);
+                queue_push(queue, coords);
             }
         }
     }
-    queueDelete(queue);
+    queue_delete(queue);
     return true;
 }
 
@@ -100,7 +111,7 @@ bool start_bfs(gamma_t *g, bfs_mode mode, uint32_t player,
 int32_t calculate_new_owner_occ_areas_change(gamma_t *g,
         uint32_t new_owner, uint32_t x_coords[], uint32_t y_coords[]) {
     int32_t new_owner_occupied_areas_change = 1;
-    list_t *adjacent_areas = listNew();
+    list_t *adjacent_areas = list_new();
     field_t *parent;
     uint32_t x_;
     uint32_t y_;
@@ -110,12 +121,12 @@ int32_t calculate_new_owner_occ_areas_change(gamma_t *g,
         y_ = y_coords[i];
         if (belongs_to_player(g, new_owner, x_, y_)) {
             parent = find_representative(get_field_ptr(g, x_, y_));
-            if (!listIn(adjacent_areas, parent))
+            if (!list_in(adjacent_areas, parent))
                 --new_owner_occupied_areas_change;
-            listAppend(adjacent_areas, parent);
+            list_append(adjacent_areas, parent);
         }
     }
-    listDelete(adjacent_areas);
+    list_delete(adjacent_areas);
 
     return new_owner_occupied_areas_change;
 }

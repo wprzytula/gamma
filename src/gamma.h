@@ -114,9 +114,4 @@ bool gamma_golden_possible(gamma_t *g, uint32_t player);
 char* gamma_board(gamma_t *g);
 
 
-uint64_t said_areas(gamma_t *g, uint32_t player);
-
-uint64_t real_areas(gamma_t *g, uint32_t player);
-
-
 #endif /* GAMMA_H */
