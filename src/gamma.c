@@ -110,7 +110,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         }
         // find & union
         if (belongs_to_player(g, player, x_, y_)) {
-            field_ptr = get_representative(g, x_, y_);
+            field_ptr = find_representative(get_field_ptr(g, x_, y_));
             if (!listIn(neigh_areas, field_ptr)) {
                 listAppend(neigh_areas, field_ptr);
                 g->players[player].occupied_areas--;
@@ -162,7 +162,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
             calculate_new_owner_adj_free_fields_change(
                     g, new_owner, x_coords, y_coords);
     int32_t new_owner_occupied_areas_change =
-            calculate_new_owner_occupied_areas_change(
+            calculate_new_owner_occ_areas_change(
                     g, new_owner, x_coords, y_coords);
 
     // skipping linear time BFSes if the golden move is evidently impossible
@@ -179,7 +179,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
             calculate_former_owner_adj_free_fields_change(
                     g, former_owner, x_coords, y_coords);
     int32_t former_owner_occupied_areas_change =
-            calculate_former_owner_occupied_areas_change(
+            calculate_former_owner_occ_areas_change(
                     g, former_owner, x_coords, y_coords);
 
     // failed or not?
@@ -204,8 +204,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 
         for (int i = 0; i < 4; ++i) {
             if (belongs_to_player(g, new_owner, x_coords[i], y_coords[i])) {
-                unite_areas(g, x_coords[i], y_coords[i], x, y);
-                break;
+                unite_areas(g, x, y, x_coords[i], y_coords[i]);
             }
         }
 
@@ -218,13 +217,13 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
                   x_coords[i], y_coords[i]);
     }
 
-    uint64_t said_areas_former = said_areas(g, former_owner);
+/*    uint64_t said_areas_former = said_areas(g, former_owner);
     uint64_t real_areas_former = real_areas(g, former_owner);
     uint64_t said_areas_new = said_areas(g, new_owner);
     uint64_t real_areas_new = real_areas(g, new_owner);
 
     assert(said_areas_former == real_areas_former);
-    assert(said_areas_new == real_areas_new);
+    assert(said_areas_new == real_areas_new);*/
 
     return succeeded;
 }
@@ -289,6 +288,7 @@ char* gamma_board(gamma_t *g) {
     return board;
 }
 
+/*
 
 uint64_t said_areas(gamma_t *g, uint32_t player) {
     return g->players[player].occupied_areas;
@@ -310,4 +310,4 @@ uint64_t real_areas(gamma_t *g, uint32_t player) {
         }
     }
     return counter;
-}
+}*/

@@ -71,7 +71,7 @@ bool start_bfs(gamma_t *g, bfs_mode mode, uint32_t player,
         set_visited(g, mode == TEST, x, y);
 
         if (mode == UNITE)
-            set_parent_by_coords(g, new_representative, x, y);
+            set_parent(new_representative, get_field_ptr(g, x, y));
 
         x_coords[0] = x     ; y_coords[0] = y + 1;
         x_coords[1] = x     ; y_coords[1] = y - 1;
@@ -97,8 +97,7 @@ bool start_bfs(gamma_t *g, bfs_mode mode, uint32_t player,
 }
 
 
-
-int32_t calculate_new_owner_occupied_areas_change(gamma_t *g,
+int32_t calculate_new_owner_occ_areas_change(gamma_t *g,
         uint32_t new_owner, uint32_t x_coords[], uint32_t y_coords[]) {
     int32_t new_owner_occupied_areas_change = 1;
     list_t *adjacent_areas = listNew();
@@ -110,7 +109,7 @@ int32_t calculate_new_owner_occupied_areas_change(gamma_t *g,
         x_ = x_coords[i];
         y_ = y_coords[i];
         if (belongs_to_player(g, new_owner, x_, y_)) {
-            parent = get_representative(g, x_, y_);
+            parent = find_representative(get_field_ptr(g, x_, y_));
             if (!listIn(adjacent_areas, parent))
                 --new_owner_occupied_areas_change;
             listAppend(adjacent_areas, parent);
@@ -155,7 +154,7 @@ int32_t calculate_former_owner_adj_free_fields_change(gamma_t *g,
 }
 
 
-int32_t calculate_former_owner_occupied_areas_change(gamma_t *g,
+int32_t calculate_former_owner_occ_areas_change(gamma_t *g,
         uint32_t former_owner, uint32_t x_coords[], uint32_t y_coords[]) {
     int32_t former_owner_occupied_areas_change = -1;
 
@@ -167,4 +166,3 @@ int32_t calculate_former_owner_occupied_areas_change(gamma_t *g,
 
     return former_owner_occupied_areas_change;
 }
-
