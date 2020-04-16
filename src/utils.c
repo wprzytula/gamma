@@ -10,20 +10,22 @@
  */
 
 #include "utils.h"
-#include "list.h"
 
 
 field_t *find_representative(field_t *field_ptr) {
     assert(field_ptr);
-    list_t *trace = list_new();
+    field_t *trace[10];
+    uint8_t quantity = 0;
 
     while (field_ptr->parent != field_ptr) {
         assert(field_ptr);
-        list_append(trace, field_ptr);
+        if (quantity < 10)
+            trace[quantity++] = field_ptr;
         field_ptr = field_ptr->parent;
     }
-    list_iter_kamikaze(compress_path, trace, field_ptr);
-
+    for (uint8_t i = 0; i < quantity; ++i) {
+        set_parent(field_ptr, trace[i]);
+    }
     return field_ptr;
 }
 

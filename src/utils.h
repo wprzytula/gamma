@@ -247,19 +247,6 @@ static inline void set_parent(field_t *parent_ptr, field_t *child_ptr) {
     child_ptr->parent = parent_ptr;
 }
 
-/** @brief Ustawia pierwsze pole jako ojca drugiego pola.
- * Rzutuje wskaźniki @p parent_ptr oraz @p child_ptr na typ field_t*,
- * a następnie ustawia pole wskazywane przez @p parent_ptr jako ojca pola
- * wskazywanego przez @p child_ptr. Zakłada, parent_ptr oraz child_ptr
- * wskazują na poprawne pola na planszy zadanej w @ref gamma_new.
- * @param[in] parent_ptr    – wskaźnik na pole-ojca
- * @param[in,out] child_ptr - wskaźnik na pole-syna
- */
-static inline void compress_path(void *parent_ptr, void *child_ptr) {
-    assert(parent_ptr != NULL && child_ptr != NULL);
-    set_parent((field_t*)parent_ptr, (field_t*)child_ptr);
-}
-
 /** @brief Daje reprezentanta obszaru, do którego należy pole.
  * Daje wskaźnik przodka pola wskazywanego przez @p field_ptr, który
  * sam jest swoim ojcem. Dodatkowo dokonuje kompresji ścieżki, ustawiając

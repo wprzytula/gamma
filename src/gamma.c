@@ -9,7 +9,6 @@
  */
 
 #include "gamma.h"
-#include "list.h"
 #include <stdio.h>
 #include <errno.h>
 
@@ -299,7 +298,6 @@ char* gamma_board(gamma_t *g) {
                         free(board);
                         return NULL;
                     }
-
                 }
             }
             board[index++] = '\n';
