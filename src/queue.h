@@ -71,9 +71,11 @@ static inline void* queue_peek_last(queue_t *queue) {
  * na @p value. Zakłada że kolejka @p queue jest poprawna.
  * @param[in,out] queue  – wskaźnik na kolejkę,
  * @param[in] value      - wskaźnik do wrzucenia na kolejkę.
+ * @return Wartość @p true jeśli operacja zakończyła się powodzeniem,
+ * a @p false jeśli wystąpił błąd alokacji pamięci i kolejka nie uległa zmianie.
  */
-static inline void queue_push(queue_t *queue, void* value) {
-    list_append(queue, value);
+static inline bool queue_push(queue_t *queue, void* value) {
+    return list_append(queue, value);
 }
 
 /** @brief Wrzuca wskaźnik @p value na początek kolejki.
@@ -81,9 +83,12 @@ static inline void queue_push(queue_t *queue, void* value) {
  * na @p value. Zakłada że kolejka @p queue jest poprawna.
  * @param[in, out] queue   – wskaźnik na kolejkę,
  * @param[in] value        - wskaźnik do wrzucenia na kolejkę.
+ * @return Wartość @p true jeśli operac
+ * ja zakończyła się powodzeniem,
+ * a @p false jeśli wystąpił błąd alokacji pamięci i kolejka nie uległa zmianie.
  */
-static inline void queue_push_beg(queue_t *queue, void* value) {
-    list_prepend(queue, value);
+static inline bool queue_push_beg(queue_t *queue, void* value) {
+    return list_prepend(queue, value);
 }
 
 /** @brief Daje wartość z początku kolejki i usuwa ją z kolejki.

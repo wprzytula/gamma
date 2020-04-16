@@ -1,5 +1,5 @@
 /** @file
- * Interfejs klasy przechowującej stan gry gamma
+ * Interfejs klasy przechowującej stan gry gamma.
  *
  * @author Marcin Peczarski <marpe@mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski
@@ -12,11 +12,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "utils.h"
-
-/**
- * Struktura przechowująca stan gry.
- */
-typedef struct gamma gamma_t;
 
 /** @brief Tworzy strukturę przechowującą stan gry.
  * Alokuje pamięć na nową strukturę przechowującą stan gry.

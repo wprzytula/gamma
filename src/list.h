@@ -14,10 +14,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
+
 /**
  * Typ pojedynczego elementu listy.
  */
 typedef struct list_elem list_elem_t;
+
 
 /**
  * Struktura pojedynczego elementu listy.
@@ -102,16 +104,20 @@ void* list_last(list_t *list);
  * Zakłada że lista @p list jest poprawna.
  * @param[in, out] list  – wskaźnik na listę,
  * @param[in] value      - wskaźnik do dodania jako nowa wartość na listę.
+ * * @return Wartość @p true jeśli operacja zakończyła się powodzeniem,
+ * a @p false jeśli wystąpił błąd alokacji pamięci i lista nie uległa zmianie.
  */
-void list_append(list_t *list, void *value);
+bool list_append(list_t *list, void *value);
 
 /** @brief Dodaje wskaźnik @p value na początek listy.
  * Dodaje na początek listy nowy element i ustawia jego wartość na @p value.
  * Zakłada że lista @p list jest poprawna.
  * @param[in, out] list  – wskaźnik na listę,
  * @param[in] value      - wskaźnik do dodania jako nowa wartość na listę.
+ * @return Wartość @p true jeśli operacja zakończyła się powodzeniem,
+ * a @p false jeśli wystąpił błąd alokacji pamięci i lista nie uległa zmianie.
  */
-void list_prepend(list_t *list, void *value);
+bool list_prepend(list_t *list, void *value);
 
 /** @brief Usuwa wskaźnik z końca listy.
  * Usuwa z listy element zawierający ostatnią wartość.
@@ -145,8 +151,8 @@ void* list_pop_first(list_t *list);
  */
 void* list_pop_last(list_t *list);
 
-/** @brief Woła funkcję z parami @p another_param, kolejna wartość listy.
- * Woła funkcję @p fun z kolejnymi parami argumentów: (@p another_param, wartość listy @p list)
+/** @brief Woła iteratywnie funkcję z argumentami (@p another_param, kolejna wartość na liście).
+ * Woła funkcję @p fun z kolejnymi parami argumentów: (@p another_param, wartość na liście @p list)
  * dla wszystkich kolejnych wartości listy od jej początku do końca.
  * Następnie usuwa listę i zwalnia całą zajmowaną przez nią pamięć.
  * Zakłada że lista @p list oraz funkcja @p fun są poprawne.

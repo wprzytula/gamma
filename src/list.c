@@ -24,13 +24,13 @@ bool list_in(list_t *list, void *value) {
 /** @brief Tworzy nowy element listy.
  * Alokuje pamięć na nowy element listy.
  * Inicjuje ten element i przypisuje mu wartość @p value.
- * @param value  - wartość nowego elementu listy
+ * @param[in] value  - wartość nowego elementu listy
  * @return Wskaźnik na utworzony element lub NULL, gdy nie udało się
  * zaalokować pamięci.
  */
 static list_elem_t* listCreateElem(void *value) {
     list_elem_t *newElem = malloc(sizeof(list_elem_t));
-    if (!newElem)
+    if (newElem == NULL)
         return NULL;
     newElem->value = value;
     return newElem;
@@ -47,6 +47,8 @@ list_t *list_new() {
     rightGuard->right = rightGuard;
 
     list_t *newList = malloc(sizeof(list_t));
+    if (newList == NULL)
+        return NULL;
     *newList = (list_t){.left_guard = leftGuard, .right_guard = rightGuard,
                         .logical_size = 0};
 
@@ -92,25 +94,31 @@ void* list_last(list_t *list) {
 }
 
 
-void list_append(list_t *list, void *value) {
+bool list_append(list_t *list, void *value) {
     assert(list);
     list_elem_t *newElem = listCreateElem(value);
+    if (newElem == NULL)
+        return false;
     newElem->left = list->right_guard->left;
     newElem->right = list->right_guard;
     list->right_guard->left->right = newElem;
     list->right_guard->left = newElem;
     ++list->logical_size;
+    return true;
 }
 
 
-void list_prepend(list_t *list, void *value) {
+bool list_prepend(list_t *list, void *value) {
     assert(list);
     list_elem_t *newElem = listCreateElem(value);
+    if (newElem == NULL)
+        return false;
     newElem->right = list->left_guard->right;
     newElem->left = list->left_guard;
     list->left_guard->right->left = newElem;
     list->left_guard->right = newElem;
     ++list->logical_size;
+    return true;
 }
 
 
