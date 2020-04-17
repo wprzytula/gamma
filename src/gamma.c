@@ -24,7 +24,7 @@ gamma_t* gamma_new(uint32_t width, uint32_t height,
         players_data[i] = (player_t){.golden_move_available = true,
                                     .occupied_areas = 0,
                                     .taken_fields = 0,
-                                    .available_adjacent_fields = 0};
+                                    .available_adj_fields = 0};
     }
     board_t rows = malloc(sizeof(row_t) * height);
     if (rows == NULL)
@@ -113,13 +113,13 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
                 }
             }
             if (!player_already_decremented) {
-                --g->players[owner].available_adjacent_fields;
+                --g->players[owner].available_adj_fields;
                 players_to_decrement[players_to_decrement_quantity++] = owner;
             }
         }
         // calculate the change of current player free adjacent fields
         else if (!has_neighbour_of_player(g, player, x_, y_)) {
-            ++g->players[player].available_adjacent_fields;
+            ++g->players[player].available_adj_fields;
         }
         // find & union
         if (belongs_to_player(g, player, x_, y_)) {
@@ -197,9 +197,9 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
                 new_owner_occupied_areas_change;
         g->players[former_owner].occupied_areas +=
                 former_owner_occupied_areas_change;
-        g->players[new_owner].available_adjacent_fields +=
+        g->players[new_owner].available_adj_fields +=
                 new_owner_adj_fields_change;
-        g->players[former_owner].available_adjacent_fields +=
+        g->players[former_owner].available_adj_fields +=
                 former_owner_adj_fields_change;
         ++g->players[new_owner].taken_fields;
         --g->players[former_owner].taken_fields;
@@ -242,7 +242,7 @@ uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {
         return g->free_fields;
     }
     else {
-        return g->players[player].available_adjacent_fields;
+        return g->players[player].available_adj_fields;
     }
 }
 
