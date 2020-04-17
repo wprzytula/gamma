@@ -8,6 +8,7 @@
  * @date 25.03.2020
  */
 
+#include "utils.h"
 #include "gamma.h"
 #include <stdio.h>
 #include <errno.h>
@@ -17,26 +18,19 @@ gamma_t* gamma_new(uint32_t width, uint32_t height,
                    uint32_t players, uint32_t areas) {
     if (width == 0 || height == 0 || players == 0 || areas == 0)
         return NULL;
-    player_t *players_data = malloc(sizeof(player_t) * players);
+    player_t *players_data = calloc(players, sizeof(player_t));
     if (players_data == NULL)
         return NULL;
-    for (uint32_t i = 0; i < players; ++i) {
-        players_data[i] = (player_t){.golden_move_available = true,
-                                    .occupied_areas = 0,
-                                    .taken_fields = 0,
-                                    .available_adj_fields = 0};
+    for (uint64_t i = 0; i < players; ++i) {
+        players_data[i].golden_move_available = true;
     }
     board_t rows = malloc(sizeof(row_t) * height);
     if (rows == NULL)
         return NULL;
     for (uint32_t i = 0; i < height; ++i) {
-        rows[i] = malloc(sizeof(field_t) * width);
+        rows[i] = calloc(width, sizeof(field_t));
         if (rows[i] == NULL)
             return NULL;
-        for (uint32_t j = 0; j < width; ++j) {
-            rows[i][j] = (field_t){.visited = false,
-                                   .occupied = false};
-        }
     }
     gamma_t *g = malloc(sizeof(gamma_t));
     if (g == NULL)
@@ -45,7 +39,7 @@ gamma_t* gamma_new(uint32_t width, uint32_t height,
     g->width = width;
     g->max_areas = areas;
     g->players_num = players;
-    g->free_fields = height * width;
+    g->free_fields = (uint64_t)height * (uint64_t)width;
     g->players = players_data;
     g->board = rows;
 
@@ -54,6 +48,8 @@ gamma_t* gamma_new(uint32_t width, uint32_t height,
 
 
 void gamma_delete(gamma_t *g) {
+    if (g == NULL)
+        return;
     free(g->players);
     for (uint32_t i = 0; i < g->height; ++i) {
         free(g->board[i]);
@@ -102,7 +98,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         if (!valid_coords(g, x_, y_))
             continue;
 
-        // decrement every neighbouring player free adjacent fields counter
+// zmniejszenie licznika pustych przyległych pól każdemu sąsiedniemu graczowi
         if (is_occupied(g, x_, y_)) {
             owner = get_owner(g, x_, y_);
             player_already_decremented = false;
@@ -117,7 +113,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
                 players_to_decrement[players_to_decrement_quantity++] = owner;
             }
         }
-        // calculate the change of current player free adjacent fields
+// obliczenie zmiany liczby pustych przyległych pól gracza wykonującego ruch
         else if (!has_neighbour_of_player(g, player, x_, y_)) {
             ++g->players[player].available_adj_fields;
         }
