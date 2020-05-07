@@ -13,7 +13,7 @@ set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Ustawiamy wspólne opcje kompilowania dla wszystkich wariantów projektu.
-set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")
+set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")#[[ -Xlinker -lncurses]]
 # Domyślne opcje dla wariantów Release i Debug są sensowne.
 # Jeśli to konieczne, ustawiamy tu inne.
 # set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
@@ -23,17 +23,23 @@ set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")
 set(SOURCE_FILES
         src/gamma.c
         src/gamma.h
-        src/gamma_test.c
-        src/utils.c
-        src/utils.h)
+        #src/gamma_test.c
+        src/gamma_main.c
+        src/batch_mode.c
+        src/batch_mode.h
+        src/interactive_mode.c
+        src/interactive_mode.h
+        )
 
 # Wskazujemy plik wykonywalny.
 add_executable(gamma ${SOURCE_FILES})
 
+target_link_libraries(gamma -lncurses)
+
 # Dodajemy obsługę Doxygena: sprawdzamy, czy jest zainstalowany i jeśli tak to:
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
-    # Wskazujemy lokalizacją pliku konfiguracyjnego i podajemy jego docelową lokalizację w folderze, gdzie następuje kompilacja.
+    # Wskazujemy lokalizację pliku konfiguracyjnego i podajemy jego docelową lokalizację w folderze, gdzie następuje kompilacja.
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
     # Dodajemy cel doc: użycie make doc spowoduje wywołanie doxygena z odpowiednim plikiem konfiguracyjnym w folderze kompilacji.
     # Na wyjście zostanie wypisany odpowiedni komentarz.
