@@ -12,10 +12,10 @@
 #include <ctype.h>
 #include "gamma.h"
 
-
+#define MAX_PARAMS 4
 
 load_res load_line(unsigned *line, char buffer[], unsigned *buff_index) {
-    char chr;
+    int chr;
     ++*line;
     if (feof(stdin))
         return END;
@@ -28,13 +28,7 @@ load_res load_line(unsigned *line, char buffer[], unsigned *buff_index) {
             while (getchar() != '\n' || feof(stdin));
             return ERROR;
         }
-        chr = (char)getchar();
-
-       /* puts("\nDebug loading");
-        printf("buff_index: %u\n", *buff_index);
-        puts(buffer);
-*/
-//        printf("%d\n", chr);
+        chr = getchar();
 
         if (chr == -1) {
             fprintf(stderr, "%d\n", *buff_index);
@@ -74,6 +68,10 @@ load_res load_line(unsigned *line, char buffer[], unsigned *buff_index) {
     return ERROR;
 }
 
+static bool verify_as_uint32_t(uint64_t number) {
+    bool res = number == (uint64_t)(uint32_t)number;
+    return res ? res : puts("TOO BIG NUMBER"), res;
+}
 
 bool tokenize_line(char *buffer, unsigned buff_len, char *command,
                    uint64_t *params, unsigned *params_num) {
@@ -95,24 +93,22 @@ bool tokenize_line(char *buffer, unsigned buff_len, char *command,
     char *current_token = buffer + 2;
     char *next_token;
     while (*current_token != '\0') {
-//        puts(current_token);
-
         errno = 0;
         uint64_t parsed_num = strtol(current_token, &next_token, 10);
         if (errno == ERANGE || current_token == next_token) {
             errno = 0;
             return false;
         }
+        if (!verify_as_uint32_t(parsed_num))
+            return false;
         params[(*params_num)++] = parsed_num;
         current_token = next_token;
+        if (*params_num > MAX_PARAMS)
+            return false;
     }
     return true;
 }
 
-static bool verify_as_uint32_t(uint64_t number) {
-    bool res = number == (uint64_t)(uint32_t)number;
-    return res ? res : puts("TOO BIG NUMBER"), res;
-}
 
 typedef enum {MOVE = 'm', GOLDEN = 'g', BUSY = 'b',
               FREE = 'f', POSSIBLE = 'q', BOARD = 'p'}
@@ -122,9 +118,7 @@ void interpret_statement(unsigned line, gamma_t *g, char command,
                          uint64_t *params, unsigned params_num) {
     switch(command) {
         case MOVE:
-            if (params_num != 3 || !verify_as_uint32_t(params[0])
-                || !verify_as_uint32_t(params[1])
-                || !verify_as_uint32_t(params[2])) {
+            if (params_num != 3) {
                 line_error(line);
                 return;
             }
@@ -134,9 +128,7 @@ void interpret_statement(unsigned line, gamma_t *g, char command,
                 return;
             }
         case GOLDEN:
-            if (params_num != 3 || !verify_as_uint32_t(params[0])
-                || !verify_as_uint32_t(params[1])
-                || !verify_as_uint32_t(params[2])) {
+            if (params_num != 3) {
                 line_error(line);
                 return;
             }
@@ -146,7 +138,7 @@ void interpret_statement(unsigned line, gamma_t *g, char command,
                 return;
             }
         case BUSY:
-            if (params_num != 1 || !verify_as_uint32_t(params[0])) {
+            if (params_num != 1) {
                 line_error(line);
                 return;
             }
@@ -156,7 +148,7 @@ void interpret_statement(unsigned line, gamma_t *g, char command,
                 return;
             }
         case FREE:
-            if (params_num != 1 || !verify_as_uint32_t(params[0])) {
+            if (params_num != 1) {
                 line_error(line);
                 return;
             }
@@ -166,7 +158,7 @@ void interpret_statement(unsigned line, gamma_t *g, char command,
                 return;
             }
         case POSSIBLE:
-            if (params_num != 1 || !verify_as_uint32_t(params[0])) {
+            if (params_num != 1) {
                 line_error(line);
                 return;
             }

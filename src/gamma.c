@@ -10,9 +10,9 @@
 
 #include "gamma.h"
 #include <stdio.h>
-#include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #define DIRECTIONS 4
 
@@ -73,29 +73,24 @@ typedef struct {
  * Struktura przechowująca stan gry.
  */
 struct gamma {
-    uint32_t height;        ///< wysokość planszy
-    uint32_t width;         ///< szerokość planszy
-    uint32_t players_num;   ///< liczba graczy biorących udział w rozgrywce
-    uint32_t max_areas;     ///< maksymalna dopuszczalna liczba obszarów
-                            ///< dla każdego gracza
-    uint64_t free_fields;   ///< liczba pustych pól na planszy
-    player_t *players;      ///< tablica indywidualnych konfiguracji graczy,
-                            ///< przechowuje gracza z numerem @p n
-                             ///< w miejscu o indeksie @p n-1
-    board_t board;          ///< plansza do gry
+    uint32_t height;          ///< wysokość planszy
+    uint32_t width;           ///< szerokość planszy
+    uint32_t players_num;     ///< liczba graczy biorących udział w rozgrywce
+    uint32_t max_areas;       ///< maksymalna dopuszczalna liczba obszarów
+                              ///< dla każdego gracza
+    unsigned players_num_len; ///< długość napisu gracza o najwyższym numerze
+    uint64_t free_fields;     ///< liczba pustych pól na planszy
+    player_t *players;        ///< tablica indywidualnych konfiguracji graczy,
+                              ///< przechowuje gracza z numerem @p n
+                              ///< w miejscu o indeksie @p n-1
+    board_t board;            ///< plansza do gry
 };
-
-/**
- * Typ przedstawiający stan gry.
- */
-typedef struct gamma gamma_t;
 
 /**
  * Typ trybu działania algorytmu przeszukującego obszary zaatakowanego
  * w złotym ruchu gracza sąsiadujące z zaatakowanym polem.
  */
-typedef enum {TEST = 0, UNDO = 1, UNITE = 2} dfs_mode;
-
+typedef enum {TEST , UNDO , UNITE} dfs_mode;
 
 /** @brief Sprawdza, czy podane współrzędne są poprawne.
  * Sprawdza, czy pole (@p x, @p y) znajduje się na danej planszy,
@@ -318,7 +313,7 @@ static inline bool was_visited(gamma_t *g, dfs_mode mode,
 
 /** @brief Ustawia flagę odwiedzin na danym polu na zadaną wartość.
  * Ustawia flagę @p visited pola (@p x, @p y) na wartość @p flag.
- * Zakłada, że @p g jest poprawną konfiguracją gry
+ * Zakłada, że @p g je  st poprawną konfiguracją gry
  * oraz że pole (@p x, @p y) y znajduje się na planszy zadanej w @p g.
  * @param[in,out] g   - wskaźnik na strukturę przechowującą stan gry,
  * @param[in] flag    - wartość logiczna,
@@ -461,7 +456,8 @@ static int32_t calculate_player_adj_free_fields_change(
             && !has_neighbour_of_player(g, player, x_, y_))
             ++player_adj_fields_change;
     }
-    return count_for_new_owner ? player_adj_fields_change : -player_adj_fields_change;
+    return count_for_new_owner ?
+            player_adj_fields_change : -player_adj_fields_change;
 }
 
 /** @brief Oblicza zmianę liczby obszarów gracza wykonującego złoty ruch.
@@ -509,7 +505,6 @@ static int32_t calculate_new_owner_occ_areas_change(gamma_t *g,
 
     return new_owner_occupied_areas_change;
 }
-
 
 /** @brief Oblicza zmianę liczby obszarów gracza zaatakowanego w złotym ruchu.
  * Zaczyna z wartością -1 (ponieważ złoty ruch powoduje potencjalną utratę
@@ -585,6 +580,7 @@ gamma_t* gamma_new(uint32_t width, uint32_t height,
     g->free_fields = (uint64_t)height * (uint64_t)width;
     g->players = players_data;
     g->board = rows;
+    g->players_num_len = snprintf(NULL, 0, "%-" PRIu32, players);
 
     return g;
 }
@@ -796,46 +792,49 @@ char* gamma_board(gamma_t *g) {
     if (g == NULL)
         return NULL;
     char *board;
-    uint64_t index = 0;
-    if (g->players_num <= 9) {
-        board = malloc((g->height) * (g->width + 1) * sizeof(char) + 1);
+    char *curr_pos;
+    if (true) {//(g->players_num <= 9) {
+        board = malloc((g->height) * (g->width + 1) * sizeof(char)
+                       * (g->players_num_len/* + 1*/) + 1);
+        curr_pos = board;
         for (uint32_t y = g->height - 1; y < g->height; --y) {
             for (uint32_t x = 0; x < g->width; ++x) {
                 assert(valid_coords(g, x, y));
-                if (is_occupied(g, x, y))
-                    sprintf(board + index++, "%u", get_owner(g, x, y) + 1);
-                else
-                    board[index++] = '.';
-            }
-            board[index++] = '\n';
-        }
-    }
-    else {
-        uint64_t size = (g->height) * (g->width + 1);
-        board = malloc(size * sizeof(char) + 1);
-        if (board == NULL)
-            return false;
-        for (uint32_t y = g->height - 1; y < g->height; --y) {
-            for (uint32_t x = 0; x < g->width; ++x) {
-                board[index++] = '[';
-                if (is_occupied(g, x, y))
-                    sprintf(board + index++, "%u", get_owner(g, x, y) + 1);
-                else
-                    board[index++] = '.';
-                board[index++] = ']';
-                if (index + 12 >= size) {
-                    size *= 1.5;
-                    board = realloc(board, size * sizeof(char) + 1);
-                    if (errno == ENOMEM) {
-                        free(board);
-                        return NULL;
-                    }
+                if (is_occupied(g, x, y)) {
+                    sprintf(curr_pos, "%*" PRIu32, g->players_num_len,
+                            get_owner(g, x, y) + 1);
                 }
+                else {
+                    sprintf(curr_pos, "%*c", g->players_num_len, '.');
+                }
+                /*if (g->players_num_len > 1 && x < g->width - 1) {
+                    *(curr_pos++ + g->players_num_len) = ' ';
+                    curr_pos += g->players_num_len + 1;
+                }
+                else {
+                    curr_pos += g->players_num_len;
+                }*/
+                curr_pos += g->players_num_len;
             }
-            board[index++] = '\n';
+            *(curr_pos++) = '\n';
         }
     }
-
-    board[index] = '\0';
+    *curr_pos = '\0';
     return board;
+}
+
+unsigned gamma_max_player_len(gamma_t *g) {
+    return g->players_num_len;
+}
+
+uint32_t gamma_get_players_num(gamma_t *g) {
+    return g->players_num;
+}
+
+uint32_t gamma_get_width(gamma_t *g) {
+    return g->width;
+}
+
+uint32_t gamma_get_height(gamma_t *g) {
+    return g->height;
 }

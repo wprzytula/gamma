@@ -11,7 +11,7 @@
 
 #include "gamma.h"
 
-void interactive_game(unsigned line, gamma_t *g);
+void interactive_game(gamma_t *g);
 
 
 

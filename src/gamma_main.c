@@ -32,7 +32,7 @@ void init_game(gamma_t **g, uint64_t params[], unsigned params_num) {
 
 
 int main() {
-    /*unsigned line = 0;
+    unsigned line = 0;
     char buffer[100];
     unsigned buff_len;
     char command;
@@ -56,9 +56,9 @@ int main() {
 
         tokenize_line(buffer, buff_len, &command, params, &params_num);
 
-       *//* for (unsigned i = 0; i < params_num; ++i) {
-            printf("%lu\n", params[i]);
-        }*//*
+//        for (unsigned i = 0; i < params_num; ++i) {
+//            printf("%lu\n", params[i]);
+//        }
 
         mode = determine_mode(command);
         if (mode != INVALID && params_num == 4)
@@ -66,17 +66,13 @@ int main() {
         else
             line_error(line);
     } while (!g);
-
     if (mode == BATCH) {
         printf("OK %u\n", line);
         batch_mainloop(line, g);
     }
     else {// mode == INTERACTIVE
-        interactive_game(line, g);
+        interactive_game(g);
     }
-    gamma_delete(g);*/
-    interactive_game(1, NULL);
+    gamma_delete(g);
     return 0;
 }
-
-

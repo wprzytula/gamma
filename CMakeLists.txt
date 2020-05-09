@@ -13,7 +13,7 @@ set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Ustawiamy wspólne opcje kompilowania dla wszystkich wariantów projektu.
-set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")#[[ -Xlinker -lncurses]]
+set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")
 # Domyślne opcje dla wariantów Release i Debug są sensowne.
 # Jeśli to konieczne, ustawiamy tu inne.
 # set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
@@ -23,7 +23,6 @@ set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")#[[ -Xlinker -lncurses]]
 set(SOURCE_FILES
         src/gamma.c
         src/gamma.h
-        #src/gamma_test.c
         src/gamma_main.c
         src/batch_mode.c
         src/batch_mode.h
@@ -33,8 +32,6 @@ set(SOURCE_FILES
 
 # Wskazujemy plik wykonywalny.
 add_executable(gamma ${SOURCE_FILES})
-
-target_link_libraries(gamma -lncurses)
 
 # Dodajemy obsługę Doxygena: sprawdzamy, czy jest zainstalowany i jeśli tak to:
 find_package(Doxygen)
