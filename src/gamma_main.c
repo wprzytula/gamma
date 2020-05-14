@@ -1,5 +1,5 @@
 /** @file
- * Moduł wykonywalny gry gamma.
+ * Moduł wykonywalny interfejsu tekstowego gry gamma.
  *
  * @author Wojciech Przytuła <wp418383@students.mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski
@@ -9,31 +9,46 @@
 #include "batch_mode.h"
 #include "interactive_mode.h"
 #include "gamma.h"
+#include <stdlib.h>
 
-
+/**
+ * Tryb gry gamma.
+ */
 typedef enum {INVALID, BATCH, INTERACTIVE} game_mode;
 
-
-static inline game_mode determine_mode(char command) {
-    if (command == 'B')
+/** @brief Określa tryb gry.
+ * Określa, czy jaki tryb gry oznacza @p mode.
+ * @param[in] mode  - znak określający tryb gry.
+ * @return Wartość BATCH lub INTERACTIVE jeśli gra ma się odbyć w trybie
+ * odpowiednio wsadowym lub interaktywnym, zaś INVALID jeśli podany znak
+ * nie oznacza żadnego z powyższych trybów.
+ */
+static inline game_mode determine_mode(char mode) {
+    if (mode == 'B')
         return BATCH;
-    else if (command == 'I')
+    else if (mode == 'I')
         return INTERACTIVE;
     else
         return INVALID;
 }
 
-
-void init_game(gamma_t **g, uint64_t params[], unsigned params_num) {
-    if (params_num != 4)
-        return;
-    *g = gamma_new(params[0], params[1], params[2],params[3]);
-}
-
-
+/** @brief Umożliwia wybór trybu rozgrywki oraz inicjuje ją.
+ * Wczytuje ze standardowego wejścia dane na temat rozgrywki za pomocą
+ * @ref load_line, parsuje je wraz z ich parametrami za pomocą
+ * @ref tokenize_line oraz próbuje zainicjować nową rozgrywkę w danym trybie
+ * z użyciem przekazanych parametrów. W przypadku sukcesu drukuje "OK @p line",
+ * gdzie @p line jest numerem wiersza w którym wystąpiła prawidłowa inicjacja,
+ * oraz uruchamia rozgrywkę w zadanym trybie. W przypadku niepowodzenia
+ * woła @ref line_error z parametrem linii zawierającej błędne dane.
+ * Ignoruje wiersze zawierające wyłącznie znak końca wiersza '\n', a także te
+ * rozpoczynające się znakiem '#'. Kończy działanie wraz z końcem danych.
+ * @return Wartość 0 jako kod pomyślnego zakończenia działania programu lub
+ * inna wartość jeśli wystąpił krytyczny błąd.
+ */
 int main() {
     unsigned line = 0;
-    char buffer[100];
+    unsigned buff_cap = 40;
+    char *buffer = malloc(sizeof(char) * buff_cap);
     unsigned buff_len;
     char command;
     uint64_t params[4];
@@ -42,35 +57,33 @@ int main() {
     game_mode mode;
     gamma_t *g = NULL;
     do {
-        load_result = load_line(&line, buffer, &buff_len);
+        load_result = load_line(&line, buffer, &buff_cap, &buff_len);
         if (load_result == BLANK)
             continue;
         if (load_result == ERROR) {
             line_error(line);
             continue;
         }
-        if (load_result == END)
+        if (load_result == END) {
+            free(buffer);
             return 0;
-
-//        puts(buffer);
+        }
 
         tokenize_line(buffer, buff_len, &command, params, &params_num);
-
-//        for (unsigned i = 0; i < params_num; ++i) {
-//            printf("%lu\n", params[i]);
-//        }
-
         mode = determine_mode(command);
         if (mode != INVALID && params_num == 4)
-            init_game(&g, params, params_num);
+            g = gamma_new(params[0], params[1],
+                    params[2],params[3]);
         else
             line_error(line);
     } while (!g);
+
+    free(buffer);
     if (mode == BATCH) {
         printf("OK %u\n", line);
         batch_mainloop(line, g);
     }
-    else {// mode == INTERACTIVE
+    else {
         interactive_game(g);
     }
     gamma_delete(g);

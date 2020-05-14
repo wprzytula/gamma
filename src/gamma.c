@@ -14,7 +14,8 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#define DIRECTIONS 4
+#define DIRECTIONS 4   ///< liczba kierunków położenia przyległych pól
+                       ///< względem siebie
 
 /**
  * Typ przedstawiający położenie pól względem siebie.
@@ -40,7 +41,7 @@ struct field {
     uint32_t occupied_by;   ///< czyj pionek stoi na polu
     bool visited;           ///< czy już odwiedzone przez algorytm przeszukujący
     direction_t base_dir;   ///< skąd pierwotnie pojawił się na tym polu
-    ///< algorytm przeszukujący
+                            ///< algorytm przeszukujący
     struct field *parent;   ///< wskaźnik na pole-ojca w tym samym obszarze
 };
 
@@ -793,7 +794,7 @@ char* gamma_board(gamma_t *g) {
         return NULL;
     char *board;
     char *curr_pos;
-    if (true) {//(g->players_num <= 9) {
+    if (true) {
         board = malloc((g->height) * (g->width + 1) * sizeof(char)
                        * (g->players_num_len/* + 1*/) + 1);
         curr_pos = board;
@@ -807,13 +808,6 @@ char* gamma_board(gamma_t *g) {
                 else {
                     sprintf(curr_pos, "%*c", g->players_num_len, '.');
                 }
-                /*if (g->players_num_len > 1 && x < g->width - 1) {
-                    *(curr_pos++ + g->players_num_len) = ' ';
-                    curr_pos += g->players_num_len + 1;
-                }
-                else {
-                    curr_pos += g->players_num_len;
-                }*/
                 curr_pos += g->players_num_len;
             }
             *(curr_pos++) = '\n';
@@ -823,7 +817,7 @@ char* gamma_board(gamma_t *g) {
     return board;
 }
 
-unsigned gamma_max_player_len(gamma_t *g) {
+unsigned gamma_get_max_player_len(gamma_t *g) {
     return g->players_num_len;
 }
 

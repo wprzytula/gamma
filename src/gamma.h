@@ -2,8 +2,10 @@
  * Interfejs klasy przechowującej stan gry gamma.
  *
  * @author Marcin Peczarski <marpe@mimuw.edu.pl>
+ * @author Wojciech Przytuła <wp418383@students.mimuw.edu.pl>
+ *
  * @copyright Uniwersytet Warszawski
- * @date 18.03.2020
+ * @date 5.05.2020
  */
 
 #ifndef GAMMA_H
@@ -112,16 +114,33 @@ bool gamma_golden_possible(gamma_t *g, uint32_t player);
  */
 char* gamma_board(gamma_t *g);
 
-///TODO: DOC
-unsigned gamma_max_player_len(gamma_t *g);
+/** @brief Daje długość napisu najwyższego numeru gracza biorącego udział
+ * w rozgrywce.
+ * @param[in] g   - wskaźnik na strukturę przechowującą stan gry.
+ * @return Liczba cyfr w napisie najwyższego numeru gracza biorącego udział
+ * w rozgrywce, lub 0 gdy @p g jest NULL.
+ */
+unsigned gamma_get_max_player_len(gamma_t *g);
 
+/** @brief Daje liczbę graczy biorących udział w rozgrywce.
+ * @param[in] g   - wskaźnik na strukturę przechowującą stan gry.
+ * @return Liczba graczy biorących udział w rozgrywce,
+ * lub 0 gdy @p g jest NULL.
+ */
 uint32_t gamma_get_players_num(gamma_t *g);
 
+/** @brief Daje szerokość planszy w zadanej rozgrywce.
+ * @param[in] g   - wskaźnik na strukturę przechowującą stan gry.
+ * @return Szerokość planszy w zadanej rozgrywce,
+ * lub 0 gdy @p g jest NULL.
+ */
 uint32_t gamma_get_width(gamma_t *g);
 
+/** @brief Daje wysokość planszy w zadanej rozgrywce.
+ * @param[in] g   - wskaźnik na strukturę przechowującą stan gry.
+ * @return Wysokość planszy w zadanej rozgrywce,
+ * lub 0 gdy @p g jest NULL.
+ */
 uint32_t gamma_get_height(gamma_t *g);
-
-
-
 
 #endif /* GAMMA_H */

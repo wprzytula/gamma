@@ -24,6 +24,7 @@ Gra kończy się, gdy już żaden gracz nie może wykonać ruchu. Wygrywa gracz,
 który zajmie największą liczbę pól.
 
 ### Opis programu
-Na chwilę obecną program jest implementacją silnika gry gamma, to jest
-implementacją interfejsu zadanego w pliku @ref gamma.h .
+Program umożliwia rozgrywkę w grę gamma w dwóch trybach interfejsu tekstowego:
+wsadowym (gdzie wykonywane są pisane polecenia) oraz interaktywnym, gdzie
+gracze mogą w wygodny i wizualny sposób przeprowadzać rozgrywkę.
 */
