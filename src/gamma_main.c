@@ -17,7 +17,7 @@
 typedef enum {INVALID, BATCH, INTERACTIVE} game_mode;
 
 /** @brief Określa tryb gry.
- * Określa, czy jaki tryb gry oznacza @p mode.
+ * Określa, jaki tryb gry oznacza @p mode.
  * @param[in] mode  - znak określający tryb gry.
  * @return Wartość BATCH lub INTERACTIVE jeśli gra ma się odbyć w trybie
  * odpowiednio wsadowym lub interaktywnym, zaś INVALID jeśli podany znak
@@ -47,9 +47,9 @@ static inline game_mode determine_mode(char mode) {
  */
 int main() {
     unsigned line = 0;
-    unsigned buff_cap = 40;
+    size_t buff_cap = 40;
     char *buffer = malloc(sizeof(char) * buff_cap);
-    unsigned buff_len;
+    size_t buff_len;
     char command;
     uint64_t params[4];
     unsigned params_num;
@@ -57,16 +57,17 @@ int main() {
     game_mode mode;
     gamma_t *g = NULL;
     do {
-        load_result = load_line(&line, buffer, &buff_cap, &buff_len);
+        load_result = load_line(&line, &buffer, &buff_cap, &buff_len);
+
+        if (load_result == END) {
+            free(buffer);
+            return 0;
+        }
         if (load_result == BLANK)
             continue;
         if (load_result == ERROR) {
             line_error(line);
             continue;
-        }
-        if (load_result == END) {
-            free(buffer);
-            return 0;
         }
 
         tokenize_line(buffer, buff_len, &command, params, &params_num);

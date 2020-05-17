@@ -33,19 +33,19 @@ typedef enum {MOVE = 'm', GOLDEN = 'g', BUSY = 'b',
     FREE = 'f', POSSIBLE = 'q', BOARD = 'p'}
         command_t;
 
-load_res load_line(unsigned *line, char *buffer, unsigned *buff_cap,
-                   unsigned *buff_len) {
+load_res load_line(unsigned *line, char **buffer, size_t *buff_cap,
+                   size_t *buff_len) {
     int chr;
     ++*line;
     *buff_len = 0;
     if (feof(stdin))
         return END;
 
-    while (!feof(stdin)) {
+    while (true) {
         if (*buff_cap == *buff_len) {
-            char *new_buff = realloc(buffer, sizeof(char) * (*buff_cap + 10));
-            if (*new_buff) {
-                buffer = new_buff;
+            char *new_buff = realloc(*buffer, sizeof(char) * (*buff_cap + 10));
+            if (new_buff) {
+                *buffer = new_buff;
                 *buff_cap += 10;
             }
             else {
@@ -54,6 +54,7 @@ load_res load_line(unsigned *line, char *buffer, unsigned *buff_cap,
         }
 
         chr = getchar();
+
         if (chr == -1) {
             if (getchar(), !feof(stdin) || *buff_len != 0)
                 return ERROR;
@@ -65,7 +66,7 @@ load_res load_line(unsigned *line, char *buffer, unsigned *buff_cap,
                 return BLANK;
             }
             else {
-                buffer[(*buff_len)++] = '\0';
+                (*buffer)[(*buff_len)++] = '\0';
                 return VALID;
             }
         }
@@ -79,16 +80,15 @@ load_res load_line(unsigned *line, char *buffer, unsigned *buff_cap,
         if (isspace(chr)) {
             if (*buff_len == 0)
                 return ERROR;
-            else if (buffer[*buff_len - 1] == ' ')
+            else if ((*buffer)[*buff_len - 1] == ' ')
                 continue;
             else
-                buffer[(*buff_len)++] = ' ';
+                (*buffer)[(*buff_len)++] = ' ';
         }
         else {
-            buffer[(*buff_len)++] = (char)chr;
+            (*buffer)[(*buff_len)++] = (char)chr;
         }
     }
-    return ERROR;
 }
 
 bool tokenize_line(char *buffer, unsigned buff_len, char *command,
@@ -115,7 +115,7 @@ bool tokenize_line(char *buffer, unsigned buff_len, char *command,
     while (*current_token != '\0') {
         errno = 0;
         uint64_t parsed_num = strtoul(current_token, &next_token, 10);
-        if (errno == ERANGE || current_token == next_token) {
+        if (errno != 0 || current_token == next_token) {
             errno = 0;
             return false;
         }
@@ -190,8 +190,13 @@ void interpret_statement(unsigned line, gamma_t *g, char command,
             }
             else {
                 char *board = gamma_board(g);
-                printf("%s", board);
-                free(board);
+                if (!board) {
+                    line_error(line);
+                }
+                else {
+                    printf("%s", board);
+                    free(board);
+                }
                 return;
             }
         default:
@@ -200,16 +205,16 @@ void interpret_statement(unsigned line, gamma_t *g, char command,
 }
 
 void batch_mainloop(unsigned line, gamma_t *g) {
-    unsigned buff_cap = 40;
+    size_t buff_cap = 40;
     char *buffer = malloc(sizeof(char) * buff_cap);
-    unsigned buff_len;
+    size_t buff_len;
     load_res load_result;
     char command;
     uint64_t params[4];
     unsigned params_num;
 
     while (!feof(stdin)) {
-        load_result = load_line(&line, buffer, &buff_cap, &buff_len);
+        load_result = load_line(&line, &buffer, &buff_cap, &buff_len);
         if (load_result == BLANK)
             continue;
         if (load_result == ERROR) {
@@ -229,4 +234,3 @@ void batch_mainloop(unsigned line, gamma_t *g) {
     }
     free(buffer);
 }
-

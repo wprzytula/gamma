@@ -32,14 +32,16 @@ typedef enum {LEFT = 'D', UP = 'A', DOWN = 'B', RIGHT = 'C'} arrow;
  * @param[in] player  - numer gracza, którego pionek zajmuje dane pole.
  */
 static void update_board(gamma_t *g, uint32_t x, uint32_t y, uint32_t player) {
-    printf(ANSI"s"); // Zapisuje położenie kursora.
+    // Zapisuje położenie kursora.
+    printf(ANSI"s");
 
     // Przesuwa kursor w dane miejsce na ekranie
     printf(ANSI"%u;%uH", gamma_get_height(g) - y,
             1 + x * gamma_get_max_player_len(g));
     printf("%*" PRIu32, gamma_get_max_player_len(g), player);
 
-    printf(ANSI"u"); // Przywraca zapisane położenie kursora.
+    // Przywraca zapisane położenie kursora.
+    printf(ANSI"u");
 }
 
 /** @brief Wyświetla podsumowanie zakończonej rozgrywki.
@@ -50,7 +52,8 @@ static void update_board(gamma_t *g, uint32_t x, uint32_t y, uint32_t player) {
 static void show_summary(gamma_t *g) {
     // Przesuwa kursor w dane miejsce na ekranie
     printf(ANSI"%u;%uH", gamma_get_height(g) + 1, 0);
-    printf(ANSI"K"); // Czyści zawartość bieżącej linii.
+    // Czyści zawartość bieżącej linii.
+    printf(ANSI"K");
     uint64_t max_busy_fields = 0;
     for (uint32_t player = 1; player <= gamma_get_players_num(g)
                               && player > 0; ++player ) {
@@ -76,14 +79,17 @@ static void show_summary(gamma_t *g) {
 static void update_stats(gamma_t *g, uint32_t curr_player) {
     printf(ANSI"s"); // Zapisuje położenie kursora.
 
-    printf(ANSI"%u;%uH", gamma_get_height(g) + 1, 0); // Przesuwa kursor.
-    printf(ANSI"K"); // Czyści zawartość bieżącej linii.
+    // Przesuwa kursor.
+    printf(ANSI"%u;%uH", gamma_get_height(g) + 1, 0);
+    // Czyści zawartość bieżącej linii.
+    printf(ANSI"K");
     printf("PLAYER %u B%lu F%lu%s", curr_player,
             gamma_busy_fields(g, curr_player),
             gamma_free_fields(g, curr_player),
             gamma_golden_possible(g, curr_player) ? " G" : "");
 
-    printf(ANSI"u"); // Przywraca zapisane położenie kursora.
+    // Przywraca zapisane położenie kursora.
+    printf(ANSI"u");
 }
 
 /** @brief Przesuwa kursor o jedno pole w zadanym kierunku.
@@ -101,27 +107,29 @@ static void move_cursor(gamma_t *g, uint32_t *x, uint32_t *y, arrow dirchr) {
     switch (dirchr) {
         case UP:
             if (*y < gamma_get_height(g) - 1) {
-                printf(ANSI"1A"); // Przesuwa kursor w górę.
+                // Przesuwa kursor jedno pole w górę.
+                printf(ANSI"1A");
                 ++*y;
             }
             break;
 
         case DOWN:
             if (*y > 0) {
-                printf(ANSI"1B"); // Przesuwa kursor w dół.
+                // Przesuwa kursor jedno pole w dół.
+                printf(ANSI"1B");
                 --*y;
             }
             break;
         case RIGHT:
             if (*x < gamma_get_width(g) - 1) {
-                // Przesuwa kursor w prawo.
+                // Przesuwa kursor jedno pole w prawo.
                 printf(ANSI"%uC", gamma_get_max_player_len(g));
                 ++*x;
             }
             break;
         case LEFT:
             if (*x > 0) {
-                // Przesuwa kursor w lewo.
+                // Przesuwa kursor jedno pole w lewo.
                 printf(ANSI"%uD", gamma_get_max_player_len(g));
                 --*x;
             }
@@ -203,8 +211,13 @@ void interactive_game(gamma_t *g) {
     uint32_t x = 0;
     uint32_t y = gamma_get_height(g) - 1;
 
-    printf(ANSI"2J"); // Czyści ekran.
+    char *board = gamma_board(g);
+    if (!board) {
+        gamma_delete(g);
+        exit(1);
+    }
 
+    // Pobiera i wykonuje kopię poprzednich ustawień konsoli.
     struct termios normal_term, inter_term;
     tcgetattr(STDIN_FILENO, &normal_term);
     inter_term = normal_term;
@@ -212,16 +225,17 @@ void interactive_game(gamma_t *g) {
     // Przestawia konsolę w tryb niekanoniczny
     // i wyłącza wyświetlanie wprowadzanych znaków.
     inter_term.c_lflag = ~(ICANON | ECHO);
-    tcsetattr( STDIN_FILENO, TCSANOW, &inter_term);
+    tcsetattr(STDIN_FILENO, TCSANOW, &inter_term);
 
-    printf(ANSI"0;0H"); // Przesuwa kursor w lewy górny róg ekranu.
-    char *board = gamma_board(g);
-    if (!board) {
-        gamma_delete(g);
-        exit(1);
-    }
+    // Czyści ekran.
+    printf(ANSI"2J");
+
+    // Przesuwa kursor w lewy górny róg ekranu.
+    printf(ANSI"0;0H");
+
     printf("%s", board);
     free(board);
+
     // Przesuwa kursor na pole w lewym górnym rogu planszy.
     printf(ANSI"0;%uH", gamma_get_max_player_len(g));
 
@@ -249,7 +263,8 @@ void interactive_game(gamma_t *g) {
     // Przywraca poprzednie ustawienia konsoli.
     tcsetattr(STDIN_FILENO, TCSANOW, &normal_term);
 
+    // Czyści ekran.
     printf(ANSI"2J");
+    // Przesuwa kursor w lewy górny róg ekranu.
     printf(ANSI"0;0H");
 }
-

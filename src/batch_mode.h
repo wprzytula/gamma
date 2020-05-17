@@ -33,8 +33,8 @@ typedef enum {END, BLANK, ERROR, VALID} load_res;
  * ERROR, jeśli nastąpiło przepełnienie bufora, lub plik kończy się niepustą
  * linią niezakończoną znakiem '\n'; w pozostałych przypadkach VALID.
  */
-load_res load_line(unsigned *line, char *buffer, unsigned *buff_cap,
-                   unsigned *buff_len);
+load_res load_line(unsigned *line, char **buffer, size_t *buff_cap,
+                   size_t *buff_len);
 
 /** @brief Drukuje informację o błędnej linii.
  * Drukuje na standardowe wyjście diagnostyczne komunikat o błędzie
@@ -72,9 +72,9 @@ bool tokenize_line(char *buffer, unsigned buff_len, char *command,
  * wywoływana jest funkcja @p line_error wraz z parametrem @p line.
  * @param[in] line         - numer linii z wykonywanym poleceniem,
  * @param[in,out] g        - prawidłowa konfiguracja gry gamma,
- * @param[in] command     - znak wykonywanego polecenia,
- * @param[in] params      - tablica sparsowanych parametrów polecenia,
- * @param[in] params_num  - liczba sparsowanych parametrów polecenia.
+ * @param[in] command      - znak wykonywanego polecenia,
+ * @param[in] params       - tablica sparsowanych parametrów polecenia,
+ * @param[in] params_num   - liczba sparsowanych parametrów polecenia.
  */
 void interpret_statement(unsigned line, gamma_t *g, char command,
                          uint64_t *params, unsigned params_num);
