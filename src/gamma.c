@@ -1,7 +1,9 @@
 /** @file
  * Implementacja klasy przechowującej stan gry gamma.
- * Procedury tu zdefiniowane przyjmują dodatni numer gracza, natomiast
- * wewnętrznie przetwarzają go jako mniejszy o 1.
+ * Eksportowane funkcje (gamma_*) przyjmują dodatni numer gracza, a wewnętrznie
+ * przetwarzają go jako mniejszy o 1.
+ * Funkcje statyczne przyjmują nieujemny numer gracza, tj. numer o 1 mniejszy
+ * od faktycznego w grze.
  *
  * @author Wojciech Przytuła <wp418383@students.mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski
@@ -14,8 +16,8 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#define DIRECTIONS 4   ///< liczba kierunków położenia przyległych pól
-                       ///< względem siebie
+#define DIRECTIONS 4   ///< Liczba kierunków położenia przyległych pól
+                       ///< względem siebie.
 
 /**
  * Typ przedstawiający położenie pól względem siebie.
@@ -37,12 +39,12 @@ typedef enum {UP = 0, RIGHT = 1, DOWN = 2, LEFT = 3, RET = 4} direction_t;
  * @ref start_dfs.
  */
 struct field {
-    bool occupied;          ///< czy na polu stoi pionek
-    uint32_t occupied_by;   ///< czyj pionek stoi na polu
-    bool visited;           ///< czy już odwiedzone przez algorytm przeszukujący
-    direction_t base_dir;   ///< skąd pierwotnie pojawił się na tym polu
-                            ///< algorytm przeszukujący
-    struct field *parent;   ///< wskaźnik na pole-ojca w tym samym obszarze
+    bool occupied;          ///< Czy na polu stoi pionek.
+    uint32_t occupied_by;   ///< Czyj pionek stoi na polu.
+    bool visited;           ///< Czy już odwiedzone przez algorytm przeszukujący.
+    direction_t base_dir;   ///< Skąd pierwotnie pojawił się na tym polu
+                            ///< algorytm przeszukujący.
+    struct field *parent;   ///< Wskaźnik na pole-ojca w tym samym obszarze.
 };
 
 /**
@@ -64,34 +66,34 @@ typedef row_t* board_t;
  * Typ struktury przechowującej dane na temat gracza.
  */
 typedef struct {
-    bool golden_move_available;    ///< czy gracz nie wykonał jeszcze złotego ruchu
-    uint32_t occupied_areas;       ///< ile obszarów zajmuje gracz na planszy
-    uint64_t taken_fields;         ///< ile pól zajmuje gracz na planszy
-    uint64_t available_adj_fields; ///< ile pustych pól przylega do pionków gracza
+    bool golden_move_used;         ///< Czy gracz nie wykonał już złoty ruch.
+    uint32_t occupied_areas;       ///< Ile obszarów zajmuje gracz na planszy.
+    uint64_t taken_fields;         ///< Ile pól zajmuje gracz na planszy.
+    uint64_t available_adj_fields; ///< Ile pustych pól przylega do pionków gracza.
 } player_t;
 
 /**
  * Struktura przechowująca stan gry.
  */
 struct gamma {
-    uint32_t height;          ///< wysokość planszy
-    uint32_t width;           ///< szerokość planszy
-    uint32_t players_num;     ///< liczba graczy biorących udział w rozgrywce
-    uint32_t max_areas;       ///< maksymalna dopuszczalna liczba obszarów
-                              ///< dla każdego gracza
-    unsigned players_num_len; ///< długość napisu gracza o najwyższym numerze
-    uint64_t free_fields;     ///< liczba pustych pól na planszy
-    player_t *players;        ///< tablica indywidualnych konfiguracji graczy,
+    uint32_t height;          ///< Wysokość planszy.
+    uint32_t width;           ///< Szerokość planszy.
+    uint32_t players_num;     ///< Liczba graczy biorących udział w rozgrywce.
+    uint32_t max_areas;       ///< Maksymalna dopuszczalna liczba obszarów
+                              ///< dla każdego gracza.
+    unsigned players_num_len; ///< Długość napisu gracza o najwyższym numerze.
+    uint64_t free_fields;     ///< Liczba pustych pól na planszy.
+    player_t *players;        ///< Tablica indywidualnych konfiguracji graczy,
                               ///< przechowuje gracza z numerem @p n
-                              ///< w miejscu o indeksie @p n-1
-    board_t board;            ///< plansza do gry
+                              ///< w miejscu o indeksie @p n-1.
+    board_t board;            ///< Plansza do gry.
 };
 
 /**
  * Typ trybu działania algorytmu przeszukującego obszary zaatakowanego
  * w złotym ruchu gracza sąsiadujące z zaatakowanym polem.
  */
-typedef enum {TEST , UNDO , UNITE} dfs_mode;
+typedef enum {TEST, UNDO, UNITE} dfs_mode;
 
 /** @brief Sprawdza, czy podane współrzędne są poprawne.
  * Sprawdza, czy pole (@p x, @p y) znajduje się na danej planszy,
@@ -123,7 +125,7 @@ static inline bool valid_player(gamma_t *g, uint32_t player) {
 /** @brief Daje wskaźnik na pole o danych współrzędnych.
 * Zwraca referencję na pole (@p x, @p y).
 * Zakłada, że @p g jest poprawną konfiguracją gry
- * oraz że pole (@p x, @p y) znajduje się na planszy zadanej przez @p g.
+* oraz że pole (@p x, @p y) znajduje się na planszy zadanej przez @p g.
 * @param[in,out] g  - wskaźnik na strukturę przechowującą stan gry
 * @param[in] x      - numer kolumny, liczba nieujemna mniejsza od wartości
 *                     @p width z funkcji @ref gamma_new,
@@ -200,7 +202,7 @@ static inline void set_owner(gamma_t *g, uint32_t player,
  * @param[in] y       - numer wiersza, liczba nieujemna
  * @return Wartość @p true, jeśli pole (@p x, @p y) jest zajęte przez gracza
  * @p player, a @p false jeśli jest zajęte przez innego gracza,
- * jeśli jest pustelub jeśli nie znajduje się na planszy.
+ * jeśli jest puste lub jeśli nie znajduje się na planszy.
  */
 static inline bool belongs_to_player(gamma_t *g, uint32_t player,
                                      uint32_t x, uint32_t y) {
@@ -266,7 +268,6 @@ static field_t *find_representative(field_t *field_ptr) {
     return field_ptr;
 }
 
-
 /** @brief Łączy obszary, do których należą dane dwa pola.
  * Ustawia reprezentanta obszaru, do którego należy pole (@p x1, @p y1),
  * jako reprezentanta obszaru do którego należy pole (@p x2, @p y2).
@@ -291,7 +292,6 @@ static void unite_areas(gamma_t *g, uint32_t x1, uint32_t y1,
         set_parent(representative1, representative2);
 }
 
-
 /** @brief Sprawdza, czy pole zostało już odwiedzone przez algorytm przeszukujący.
  * Sprawdza, czy pole (@p x, @p y) zostało odwiedzone przez algorytm
  * przeszukujący w trybie @p mode podczas wykonywania aktualnego złotego ruchu.
@@ -309,7 +309,7 @@ static void unite_areas(gamma_t *g, uint32_t x1, uint32_t y1,
 static inline bool was_visited(gamma_t *g, dfs_mode mode,
                                uint32_t x, uint32_t y) {
     assert(valid_coords(g, x, y));
-    return (mode == TEST) ? g->board[y][x].visited : !g->board[y][x].visited;
+    return mode == TEST ? g->board[y][x].visited : !g->board[y][x].visited;
 }
 
 /** @brief Ustawia flagę odwiedzin na danym polu na zadaną wartość.
@@ -415,12 +415,10 @@ static bool start_dfs(gamma_t *g, dfs_mode mode, uint32_t player,
                 ret = false;
             }
         }
-    }
-    while (!valid_coords(g, x, y) || direction < RET
+    } while (!valid_coords(g, x, y) || direction < RET
              || g->board[y][x].base_dir < RET );
     return true;
 }
-
 
 /** @brief Oblicza zmianę liczby pustych pól przyległych do obszarów gracza
  * atakującego lub atakowanego w złotym ruchu.
@@ -443,10 +441,10 @@ static bool start_dfs(gamma_t *g, dfs_mode mode, uint32_t player,
  * @return Liczba, o jaką zmieniła się liczba pustych pól przyległych
  * do obszarów gracza @p player.
  */
-static int32_t calculate_player_adj_free_fields_change(
+static int calculate_player_adj_free_fields_change(
         gamma_t *g, bool count_for_new_owner, uint32_t player,
-        uint32_t x_coords[], uint32_t y_coords[]) {
-    int32_t player_adj_fields_change = 0;
+        uint32_t *x_coords, uint32_t *y_coords) {
+    int player_adj_fields_change = 0;
     uint32_t x_;
     uint32_t y_;
 
@@ -476,9 +474,9 @@ static int32_t calculate_player_adj_free_fields_change(
  * @return Liczba, o jaką zmieniła się liczba obszarów gracza @p new_owner
  * w wyniku wykonania przez niego złotego ruchu.
  */
-static int32_t calculate_new_owner_occ_areas_change(gamma_t *g,
+static int calculate_new_owner_occ_areas_change(gamma_t *g,
         uint32_t new_owner, uint32_t x_coords[], uint32_t y_coords[]) {
-    int32_t new_owner_occupied_areas_change = 1;
+    int new_owner_occupied_areas_change = 1;
     field_t *adjacent_areas[DIRECTIONS];
     unsigned quantity = 0;
     bool already_considered;
@@ -526,9 +524,9 @@ static int32_t calculate_new_owner_occ_areas_change(gamma_t *g,
  * w wyniku wykonania złotego ruchu na pole położone pomiędzy polami
  * (@p x_coords[i], @p y_coords[i]) dla 0 <= i < 4.
  */
-static int32_t calculate_former_owner_occ_areas_change(gamma_t *g,
+static int calculate_former_owner_occ_areas_change(gamma_t *g,
         uint32_t former_owner, uint32_t x_coords[], uint32_t y_coords[]) {
-    int32_t former_owner_occupied_areas_change = -1;
+    int former_owner_occupied_areas_change = -1;
 
     for (unsigned i = 0; i < DIRECTIONS; ++i) {
         if (start_dfs(g, TEST, former_owner,
@@ -552,9 +550,6 @@ gamma_t* gamma_new(uint32_t width, uint32_t height,
         free(g);
         return NULL;
     }
-    for (uint64_t i = 0; i < players; ++i) {
-        players_data[i].golden_move_available = true;
-    }
     board_t rows = malloc(sizeof(row_t) * height);
     if (rows == NULL) {
         free(g);
@@ -573,7 +568,6 @@ gamma_t* gamma_new(uint32_t width, uint32_t height,
             return NULL;
         }
     }
-
     g->height = height;
     g->width = width;
     g->max_areas = areas;
@@ -582,6 +576,8 @@ gamma_t* gamma_new(uint32_t width, uint32_t height,
     g->players = players_data;
     g->board = rows;
     g->players_num_len = snprintf(NULL, 0, "%-" PRIu32, players);
+    if (g->players_num_len >= 2)
+        ++(g->players_num_len);
 
     return g;
 }
@@ -597,16 +593,128 @@ void gamma_delete(gamma_t *g) {
     free(g);
 }
 
-bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
-    --player;
-    if (g == NULL || !valid_coords(g, x, y)
-        || !valid_player(g, player))
-        return false;
+unsigned gamma_get_max_player_len(gamma_t *g) {
+    return g->players_num_len;
+}
+
+uint32_t gamma_get_players_num(gamma_t *g) {
+    return g->players_num;
+}
+
+uint32_t gamma_get_width(gamma_t *g) {
+    return g->width;
+}
+
+uint32_t gamma_get_height(gamma_t *g) {
+    return g->height;
+}
+
+uint32_t gamma_get_owner(gamma_t *g, uint32_t x, uint32_t y) {
     if (is_occupied(g, x, y))
+        return g->board[y][x].occupied_by + 1;
+    else
+        return 0;
+}
+
+uint64_t gamma_busy_fields(gamma_t *g, uint32_t player) {
+    --player;
+    if (g == NULL || !valid_player(g, player))
+        return 0;
+    else
+        return g->players[player].taken_fields;
+}
+
+uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {
+    --player;
+    if (g == NULL || !valid_player(g, player)) {
+        return 0;
+    }
+    else if (g->players[player].occupied_areas < g->max_areas) {
+        return g->free_fields;
+    }
+    else {
+        return g->players[player].available_adj_fields;
+    }
+}
+
+bool gamma_move_possible_there(gamma_t *g, uint32_t player, uint32_t x,
+                               uint32_t y) {
+    --player;
+    if (g == NULL || !valid_coords(g, x, y) || !valid_player(g, player))
         return false;
-    if (g->players[player].occupied_areas == g->max_areas
-        && !has_neighbour_of_player(g, player, x, y))
+    else if (is_occupied(g, x, y)
+            || (g->players[player].occupied_areas == g->max_areas
+                && !has_neighbour_of_player(g, player, x, y)))
         return false;
+    else
+        return true;
+}
+
+bool gamma_golden_possible_there(gamma_t *g, uint32_t attacker,
+                                 uint32_t x, uint32_t y) {
+    --attacker;
+    if (g == NULL || !valid_coords(g, x, y) || !valid_player(g, attacker))
+        return false;
+    if (!is_occupied(g, x, y) || belongs_to_player(g, attacker, x, y)
+        || g->players[attacker].golden_move_used
+        || (g->players[attacker].occupied_areas == g->max_areas
+            && !has_neighbour_of_player(g, attacker, x, y)))
+        return false;
+
+    uint32_t owner = get_owner(g, x, y);
+    uint32_t x_coords[DIRECTIONS];
+    uint32_t y_coords[DIRECTIONS];
+
+    x_coords[UP]    = x     ; y_coords[UP]    = y + 1;
+    x_coords[RIGHT] = x + 1 ; y_coords[RIGHT] = y    ;
+    x_coords[DOWN]  = x     ; y_coords[DOWN]  = y - 1;
+    x_coords[LEFT]  = x - 1 ; y_coords[LEFT]  = y    ;
+
+    set_visited(g, true, x, y);
+    int change = calculate_former_owner_occ_areas_change(
+                   g, owner, x_coords, y_coords);
+
+    set_visited(g, false, x, y);
+    for (unsigned i = 0; i < DIRECTIONS; ++i) {
+        start_dfs(g, UNDO, owner,
+                  x_coords[i], y_coords[i]);
+    }
+    return g->players[owner].occupied_areas + change <= g->max_areas;
+}
+
+bool gamma_golden_possible(gamma_t *g, uint32_t player) {
+    --player;
+    if (g == NULL || !valid_player(g, player)
+        || g->players[player].golden_move_used)
+        return false;
+
+    bool any_target_exists = false;
+    for (uint32_t i = 0; i < g->players_num; ++i) {
+        if (g->players[i].taken_fields > 0 && i != player) {
+            if (g->players[player].occupied_areas < g->max_areas) {
+                return true;
+            }
+            else {
+                any_target_exists = true;
+                break;
+            }
+        }
+    }
+    if (any_target_exists) {
+        for (uint32_t y = 0; y < g->height; ++y) {
+            for (uint32_t x = 0; x < g->width; ++x) {
+                if (gamma_golden_possible_there(g, player + 1, x, y))
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
+    if (!gamma_move_possible_there(g, player, x, y))
+        return false;
+    --player;
 
     // Wykonanie ruchu.
     ++g->players[player].taken_fields;
@@ -681,7 +789,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     --player;
     if (g == NULL || !valid_coords(g, x, y) || !valid_player(g, player))
         return false;
-    if (!g->players[player].golden_move_available)
+    if (g->players[player].golden_move_used)
         return false;
     if (!is_occupied(g, x, y) || belongs_to_player(g, player, x, y))
         return false;
@@ -736,7 +844,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
                 former_owner_adj_fields_change;
         ++g->players[new_owner].taken_fields;
         --g->players[former_owner].taken_fields;
-        g->players[new_owner].golden_move_available = false;
+        g->players[new_owner].golden_move_used = true;
 
         for (unsigned i = 0; i < DIRECTIONS; ++i) {
             if (belongs_to_player(g, new_owner, x_coords[i], y_coords[i])) {
@@ -745,8 +853,9 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         }
         succeeded = true;
     }
-    // Powrót do stanu wyjściowego sprzed uruchomienia algorytmu przeszukującego
-    // oraz, jeśli złoty ruch się powiódł, zapis zmian w strukturze obszarów.
+    // Powrót do stanu wyjściowego flag odwiedzin sprzed uruchomienia
+    // algorytmu przeszukującego oraz, jeśli złoty ruch się powiódł,
+    // zapis zmian w strukturze obszarów.
     set_visited(g, false, x, y);
     for (unsigned i = 0; i < DIRECTIONS; ++i) {
         start_dfs(g, succeeded ? UNITE : UNDO, former_owner,
@@ -756,39 +865,6 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     return succeeded;
 }
 
-uint64_t gamma_busy_fields(gamma_t *g, uint32_t player) {
-    --player;
-    if (g == NULL || !valid_player(g, player))
-        return 0;
-    else
-        return g->players[player].taken_fields;
-}
-
-uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {
-    --player;
-    if (g == NULL || !valid_player(g, player)) {
-        return 0;
-    }
-    else if (g->players[player].occupied_areas < g->max_areas) {
-        return g->free_fields;
-    }
-    else {
-        return g->players[player].available_adj_fields;
-    }
-}
-
-bool gamma_golden_possible(gamma_t *g, uint32_t player) {
-    --player;
-    if (g != NULL && valid_player(g, player)
-        && g->players[player].golden_move_available) {
-        for (uint32_t i = 0; i < g->players_num; ++i) {
-            if (g->players[i].taken_fields > 0 && i != player)
-                return true;
-        }
-    }
-    return false;
-}
-
 char* gamma_board(gamma_t *g) {
     if (g == NULL)
         return NULL;
@@ -796,7 +872,7 @@ char* gamma_board(gamma_t *g) {
     char *curr_pos;
     if (true) {
         board = malloc((g->height) * (g->width + 1) * sizeof(char)
-                       * (g->players_num_len/* + 1*/) + 1);
+                       * (g->players_num_len) + 1);
         curr_pos = board;
         for (uint32_t y = g->height - 1; y < g->height; --y) {
             for (uint32_t x = 0; x < g->width; ++x) {
@@ -815,20 +891,4 @@ char* gamma_board(gamma_t *g) {
     }
     *curr_pos = '\0';
     return board;
-}
-
-unsigned gamma_get_max_player_len(gamma_t *g) {
-    return g->players_num_len;
-}
-
-uint32_t gamma_get_players_num(gamma_t *g) {
-    return g->players_num;
-}
-
-uint32_t gamma_get_width(gamma_t *g) {
-    return g->width;
-}
-
-uint32_t gamma_get_height(gamma_t *g) {
-    return g->height;
 }

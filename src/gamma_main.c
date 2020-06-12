@@ -11,6 +11,9 @@
 #include "gamma.h"
 #include <stdlib.h>
 
+#define GAME_PARAMS_NUMBER 4        ///< Liczba parametrów gry.
+#define INITIAL_BUFFER_CAPACITY 40  ///< Początkowa pojemność bufora.
+
 /**
  * Tryb gry gamma.
  */
@@ -47,11 +50,11 @@ static inline game_mode determine_mode(char mode) {
  */
 int main() {
     unsigned line = 0;
-    size_t buff_cap = 40;
+    size_t buff_cap = INITIAL_BUFFER_CAPACITY;
     char *buffer = malloc(sizeof(char) * buff_cap);
     size_t buff_len;
     char command;
-    uint64_t params[4];
+    uint64_t params[GAME_PARAMS_NUMBER];
     unsigned params_num;
     load_res load_result;
     game_mode mode;
@@ -70,13 +73,21 @@ int main() {
             continue;
         }
 
-        tokenize_line(buffer, buff_len, &command, params, &params_num);
-        mode = determine_mode(command);
-        if (mode != INVALID && params_num == 4)
-            g = gamma_new(params[0], params[1],
-                    params[2],params[3]);
-        else
+        if (tokenize_line(buffer, buff_len, &command, params, &params_num)) {
+            mode = determine_mode(command);
+            if (mode != INVALID && params_num == GAME_PARAMS_NUMBER) {
+                g = gamma_new(params[0], params[1],
+                              params[2], params[3]);
+                if (!g)
+                    line_error(line);
+            }
+            else {
+                line_error(line);
+            }
+        }
+        else {
             line_error(line);
+        }
     } while (!g);
 
     free(buffer);

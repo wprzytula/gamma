@@ -30,8 +30,19 @@ set(SOURCE_FILES
         src/interactive_mode.h
         )
 
+# Wskazujemy pliki testów.
+set(TEST_SOURCE_FILES
+        src/gamma.h
+        src/gamma.c
+        src/gamma_test.c
+)
+
 # Wskazujemy plik wykonywalny.
 add_executable(gamma ${SOURCE_FILES})
+
+# Wskazujemy plik wykonywalny dla testów silnika.
+add_executable(test EXCLUDE_FROM_ALL ${TEST_SOURCE_FILES})
+set_target_properties(test PROPERTIES OUTPUT_NAME gamma_test)
 
 # Dodajemy obsługę Doxygena: sprawdzamy, czy jest zainstalowany i jeśli tak to:
 find_package(Doxygen)

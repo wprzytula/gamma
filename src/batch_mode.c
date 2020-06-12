@@ -12,7 +12,8 @@
 #include <ctype.h>
 #include "gamma.h"
 
-#define MAX_PARAMS 4  ///< maksymalna poprawna liczba parametrów polecenia
+#define MAX_PARAMS 4  ///< Maksymalna poprawna liczba parametrów polecenia.
+#define INITIAL_BUFFER_CAPACITY 40 ///< Początkowa pojemność bufora.
 
 /** @brief Sprawdza czy liczba mieści się w zakresie @a uint32_t.
  * Rzutuje liczbę nieujemną z zakresu @a uint64_t na typ @a uint32_t oraz z powrotem,
@@ -55,6 +56,10 @@ load_res load_line(unsigned *line, char **buffer, size_t *buff_cap,
 
         chr = getchar();
 
+        if (chr == '\0' || chr == '+') {
+            while (getchar() != '\n' && !feof(stdin));
+            return ERROR;
+        }
         if (chr == -1) {
             if (getchar(), !feof(stdin) || *buff_len != 0)
                 return ERROR;
@@ -78,12 +83,16 @@ load_res load_line(unsigned *line, char **buffer, size_t *buff_cap,
             return BLANK;
         }
         if (isspace(chr)) {
-            if (*buff_len == 0)
+            if (*buff_len == 0) {
+                while (getchar() != '\n' && !feof(stdin));
                 return ERROR;
-            else if ((*buffer)[*buff_len - 1] == ' ')
+            }
+            else if ((*buffer)[*buff_len - 1] == ' ') {
                 continue;
-            else
+            }
+            else {
                 (*buffer)[(*buff_len)++] = ' ';
+            }
         }
         else {
             (*buffer)[(*buff_len)++] = (char)chr;
@@ -112,9 +121,10 @@ bool tokenize_line(char *buffer, unsigned buff_len, char *command,
 
     char *current_token = buffer + 2;
     char *next_token;
+    uint64_t parsed_num;
     while (*current_token != '\0') {
         errno = 0;
-        uint64_t parsed_num = strtoul(current_token, &next_token, 10);
+        parsed_num = strtoul(current_token, &next_token, 10);
         if (errno != 0 || current_token == next_token) {
             errno = 0;
             return false;
@@ -131,7 +141,7 @@ bool tokenize_line(char *buffer, unsigned buff_len, char *command,
 
 void interpret_statement(unsigned line, gamma_t *g, char command,
                          uint64_t *params, unsigned params_num) {
-    switch(command) {
+    switch (command) {
         case MOVE:
             if (params_num != 3) {
                 line_error(line);
@@ -205,7 +215,7 @@ void interpret_statement(unsigned line, gamma_t *g, char command,
 }
 
 void batch_mainloop(unsigned line, gamma_t *g) {
-    size_t buff_cap = 40;
+    size_t buff_cap = INITIAL_BUFFER_CAPACITY;
     char *buffer = malloc(sizeof(char) * buff_cap);
     size_t buff_len;
     load_res load_result;
